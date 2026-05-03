@@ -85,7 +85,6 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white pb-32">
       
-      {/* HEADER */}
       <div className="max-w-xl mx-auto pt-20 pb-12 px-6 flex flex-col items-center text-center space-y-6">
         <motion.div 
           initial={{ opacity: 0, scale: 0.8 }}
@@ -107,7 +106,6 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
         </div>
       </div>
 
-      {/* ENLACES */}
       <div className="max-w-xl mx-auto px-6 space-y-4">
         {links.map((link, i) => (
           <motion.button
@@ -129,7 +127,6 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
         ))}
       </div>
 
-      {/* FOOTER */}
       <div className="max-w-xl mx-auto mt-24 pb-12 flex flex-col items-center gap-4 opacity-20">
          <div className="flex items-center gap-2">
             <ShieldCheck className="w-3 h-3" />
@@ -137,7 +134,6 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
          </div>
       </div>
 
-      {/* BARRA DE CONTACTO */}
       <AnimatePresence>
         {client.lead_capture_active && (
           <motion.div 

@@ -22,7 +22,6 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
 
   const fetchData = useCallback(async () => {
     try {
-      // 1. Cargar Cliente con bypass de caché
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
         .select('*')
@@ -35,7 +34,6 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
       }
       setClient(clientData);
 
-      // 2. Cargar Enlaces Activos
       const { data: linksData } = await supabase
         .from('links')
         .select('*')
@@ -45,7 +43,6 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
 
       setLinks(linksData || []);
 
-      // 3. Registrar Visita
       await supabase.from('page_views').insert({
         client_id: clientData.id,
         referrer: document.referrer,
@@ -64,21 +61,18 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
   }, [fetchData]);
 
   const handleLinkClick = async (link: any) => {
-    // Redirigir de inmediato para mejorar UX
     let finalUrl = link.url;
     if (!finalUrl.startsWith('http')) {
       finalUrl = `https://${finalUrl}`;
     }
     window.open(finalUrl, '_blank');
 
-    // Registrar en background
     try {
       await supabase.from('clicks').insert({
         client_id: client.id,
         link_id: link.id,
         user_agent: navigator.userAgent
       });
-      // Intentar incrementar, si falla no bloquea la navegación
       await supabase.rpc('increment_link_clicks', { link_id: link.id });
     } catch (e) {
       console.warn("Analytics error", e);
@@ -91,7 +85,7 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white pb-32">
       
-      {/* HEADER: LOGO Y BIO */}
+      {/* HEADER */}
       <div className="max-w-xl mx-auto pt-20 pb-12 px-6 flex flex-col items-center text-center space-y-6">
         <motion.div 
           initial={{ opacity: 0, scale: 0.8 }}
@@ -113,7 +107,7 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
         </div>
       </div>
 
-      {/* LISTA DE ENLACES */}
+      {/* ENLACES */}
       <div className="max-w-xl mx-auto px-6 space-y-4">
         {links.map((link, i) => (
           <motion.button
@@ -135,7 +129,7 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
         ))}
       </div>
 
-      {/* WATERMARK */}
+      {/* FOOTER */}
       <div className="max-w-xl mx-auto mt-24 pb-12 flex flex-col items-center gap-4 opacity-20">
          <div className="flex items-center gap-2">
             <ShieldCheck className="w-3 h-3" />
@@ -143,7 +137,7 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
          </div>
       </div>
 
-      {/* BARRA DE CONTACTO FLOTANTE */}
+      {/* BARRA DE CONTACTO */}
       <AnimatePresence>
         {client.lead_capture_active && (
           <motion.div 
@@ -179,7 +173,6 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
                     <span className="text-[7px] font-black uppercase tracking-widest text-white/40 group-hover:text-white">Mapa</span>
                  </a>
                )}
-
             </div>
           </motion.div>
         )}
@@ -195,12 +188,4 @@ function SmartIcon({ url }: { url: string }) {
   if (lower.includes('instagr')) return <Instagram className="w-4 h-4" />;
   if (lower.includes('facebo')) return <span className="font-black text-lg leading-none">f</span>;
   return <Globe className="w-4 h-4" />;
-}
-
-function Instagram({ className }: { className?: string }) {
-  return (
-    <div className={`${className} border-2 border-current rounded-lg relative`}>
-      <div className="absolute top-0.5 right-0.5 w-1 h-1 bg-current rounded-full" />
-    </div>
-  );
 }

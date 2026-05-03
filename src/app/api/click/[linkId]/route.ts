@@ -4,14 +4,13 @@ import { headers } from 'next/headers';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: any }
+  { params }: { params: Promise<{ linkId: string }> }
 ) {
   try {
-    const resolvedParams = await params;
-    const linkId = resolvedParams.linkId;
+    const { linkId } = await params; // Resolución correcta de la promesa de params
+    const searchParams = request.nextUrl.searchParams;
     const headerList = await headers();
 
-    // Capturar IP Real (considerando proxies de Vercel/Cloudflare)
     const ip = headerList.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
 
     // 1. Obtener Link y Slug
@@ -25,30 +24,32 @@ export async function GET(
       return Response.redirect(new URL('/', request.url), 307);
     }
 
-    // 2. Registro de Clic ENRIQUECIDO (IP + Metadata)
+    // 2. Registro de Clic con Atribución
     await supabase.from('clicks').insert({
       client_id: link.client_id,
       link_id: linkId,
       user_agent: headerList.get('user-agent') || 'Unknown',
       referrer: headerList.get('referer') || 'Direct',
-      ip_address: ip
+      ip_address: ip,
+      utm_source: searchParams.get('utm_source'),
+      utm_medium: searchParams.get('utm_medium'),
+      utm_campaign: searchParams.get('utm_campaign')
     });
 
-    // 3. Lógica de Destino con UTMs
+    // 3. Lógica de Destino
     let destination = link.url.trim();
     const clientSlug = (link.clients as any)?.slug || 'unknown';
 
     if (destination.startsWith('http') && !destination.includes('wa.me') && !destination.includes('whatsapp')) {
-      const urlObj = new URL(destination);
-      urlObj.searchParams.set('utm_source', 'patagoniacoach_click');
-      urlObj.searchParams.set('utm_medium', 'bio_link');
-      urlObj.searchParams.set('utm_campaign', clientSlug);
-      destination = urlObj.toString();
-    }
-
-    if (destination.includes('wa.me')) {
-      const message = encodeURIComponent(`Hola! Vengo desde tu link de ${clientSlug}...`);
-      destination = `${destination}${destination.includes('?') ? '&' : '?'}text=${message}`;
+      try {
+        const urlObj = new URL(destination);
+        urlObj.searchParams.set('utm_source', 'patagoniacoach_click');
+        urlObj.searchParams.set('utm_medium', 'bio_link');
+        urlObj.searchParams.set('utm_campaign', clientSlug);
+        destination = urlObj.toString();
+      } catch (e) {
+        // Si no es una URL válida para el constructor de URL, la dejamos como está
+      }
     }
 
     return Response.redirect(destination, 307);

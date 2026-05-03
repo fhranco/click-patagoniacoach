@@ -2,182 +2,311 @@
 
 import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 import { 
   Save, 
-  ArrowLeft,
-  Layout,
-  Palette,
-  Type,
-  CheckCircle2,
-  Moon,
-  Sun,
-  Zap,
-  UserPlus,
+  ArrowLeft, 
+  Trash2, 
+  Plus, 
+  Link as LinkIcon, 
+  Palette, 
+  Settings2,
+  ExternalLink,
   MessageCircle,
-  Mail,
-  Smartphone,
-  MapPin
+  Globe,
+  GripVertical,
+  CheckCircle2
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 export default function EditClient({ params }: { params: Promise<{ slug: string }> }) {
-  const resolvedParams = use(params);
-  const slug = resolvedParams.slug;
+  const { slug } = use(params);
   const router = useRouter();
-
-  const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<'brand' | 'links'>('brand');
+
+  const [formData, setFormData] = useState<any>({
+    name: '',
+    slug: '',
+    description: '',
+    logo_url: '',
+    brand_color: '#000000',
+    theme: 'neutral',
+    phone: '',
+    whatsapp: '',
+    address: '',
+    lead_capture_active: false,
+    lead_capture_text: '',
+    lead_capture_type: 'whatsapp'
+  });
+
+  const [links, setLinks] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchClient();
+    fetchData();
   }, [slug]);
 
-  const fetchClient = async () => {
-    const { data } = await supabase.from('clients').select('*').eq('slug', slug).single();
-    if (data) setClient(data);
-    setLoading(false);
-  };
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // 1. Cargar datos del Cliente
+      const { data: client, error: clientError } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('slug', slug)
+        .single();
 
-  const handleSave = async () => {
-    setSaving(true);
-    const { error } = await supabase
-      .from('clients')
-      .update({
-        name: client.name,
-        description: client.description,
-        brand_color: client.brand_color,
-        theme: client.theme,
-        lead_capture_active: client.lead_capture_active,
-        lead_capture_text: client.lead_capture_text,
-        lead_capture_type: client.lead_capture_type,
-        whatsapp: client.whatsapp,
-        phone: client.phone,
-        address: client.address,
-        fb_pixel_id: client.fb_pixel_id,
-        ga_tracking_id: client.ga_tracking_id
-      })
-      .eq('id', client.id);
+      if (clientError) throw clientError;
+      setFormData(client);
 
-    if (!error) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      // 2. Cargar sus Enlaces
+      const { data: linksData } = await supabase
+        .from('links')
+        .select('*')
+        .eq('client_id', client.id)
+        .order('position', { ascending: true });
+
+      setLinks(linksData || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-    setSaving(false);
   };
 
-  if (loading) return <div className="p-20 text-center animate-pulse font-black italic opacity-20 text-4xl text-black">SINCRONIZANDO...</div>;
+  const handleClientSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update(formData)
+        .eq('id', formData.id);
+      
+      if (error) throw error;
+      alert('¡Configuración de marca guardada! 🏔️✨');
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addLink = async () => {
+    const newLink = {
+      client_id: formData.id,
+      title: 'Nuevo Enlace',
+      url: 'https://',
+      position: links.length,
+      active: true
+    };
+    
+    const { data, error } = await supabase.from('links').insert(newLink).select().single();
+    if (data) setLinks([...links, data]);
+  };
+
+  const updateLink = async (id: string, updates: any) => {
+    const { error } = await supabase.from('links').update(updates).eq('id', id);
+    if (!error) {
+      setLinks(links.map(l => l.id === id ? { ...l, ...updates } : l));
+    }
+  };
+
+  const deleteLink = async (id: string) => {
+    if (!confirm('¿Seguro que quieres eliminar este enlace?')) return;
+    const { error } = await supabase.from('links').delete().eq('id', id);
+    if (!error) setLinks(links.filter(l => l.id !== id));
+  };
+
+  if (loading) return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-4 border-patagonia-gold border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12 pb-32">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-        <div className="space-y-4 text-center md:text-left">
-          <Link href={`/app/clients/${slug}`} className="text-gray-400 hover:text-black flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all">
-            <ArrowLeft className="w-4 h-4" /> Volver
+    <div className="max-w-4xl mx-auto space-y-8 pb-32 animate-in fade-in duration-700">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href={`/app/clients/${slug}`} className="p-2 hover:bg-gray-100 rounded-full transition-all">
+            <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Ajustes Pro.</h1>
+          <div>
+            <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Configurar Cliente</h1>
+            <p className="text-gray-400 font-medium text-xs mt-1">Marca, Enlaces y Herramientas</p>
+          </div>
         </div>
-        <button onClick={handleSave} disabled={saving} className={`w-full md:w-auto btn-primary flex items-center justify-center gap-3 px-10 py-5 text-sm ${saved ? 'bg-green-500' : ''}`}>
-          {saved ? <CheckCircle2 /> : <Save />}
-          {saving ? 'Guardando...' : saved ? '¡Listo!' : 'Guardar Cambios'}
+      </div>
+
+      {/* Tabs Estilo Patagonia */}
+      <div className="flex gap-2 p-1 bg-gray-100 rounded-2xl w-fit">
+        <button 
+          onClick={() => setActiveTab('brand')}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'brand' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+        >
+          <Palette className="w-4 h-4" /> Marca y Estilo
+        </button>
+        <button 
+          onClick={() => setActiveTab('links')}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'links' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+        >
+          <LinkIcon className="w-4 h-4" /> Gestionar Enlaces
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        
-        <div className="space-y-10">
-           {/* BARRA FLOTANTE DE CONTACTO */}
-           <section className="card-premium p-8 space-y-6 border-2 border-black">
-              <h3 className="font-black uppercase tracking-widest text-[10px] flex items-center gap-2">
-                <Smartphone className="w-4 h-4 text-patagonia-gold" /> Canales Directos (Barra Flotante)
-              </h3>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Estos campos activan la barra inferior fija.</p>
-              <div className="space-y-4">
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">WhatsApp (Solo números, ej: 56912345678)</label>
-                    <input type="text" value={client.whatsapp || ''} onChange={(e) => setClient({...client, whatsapp: e.target.value})} className="input-field" placeholder="569..." />
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Teléfono Llamadas (ej: +569...)</label>
-                    <input type="text" value={client.phone || ''} onChange={(e) => setClient({...client, phone: e.target.value})} className="input-field" placeholder="+569..." />
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Dirección para Google Maps</label>
-                    <input type="text" value={client.address || ''} onChange={(e) => setClient({...client, address: e.target.value})} className="input-field" placeholder="Calle Falsa 123, Punta Arenas" />
-                 </div>
-              </div>
-           </section>
+      {activeTab === 'brand' ? (
+        <form onSubmit={handleClientSave} className="space-y-6">
+          <div className="card-premium p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+               <h3 className="font-black italic uppercase text-xs tracking-widest flex items-center gap-2">
+                 <Settings2 className="w-4 h-4 text-patagonia-gold" /> Identidad Visual
+               </h3>
+               <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-gray-400 ml-1">Nombre Comercial</label>
+                    <input 
+                      type="text" 
+                      value={formData.name} 
+                      onChange={e => setFormData({...formData, name: e.target.value})}
+                      className="input-premium"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-gray-400 ml-1">Slug (URL)</label>
+                    <input type="text" value={formData.slug} disabled className="input-premium opacity-50 bg-gray-50" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-gray-400 ml-1">URL del Logo</label>
+                    <input 
+                      type="text" 
+                      value={formData.logo_url} 
+                      onChange={e => setFormData({...formData, logo_url: e.target.value})}
+                      className="input-premium"
+                    />
+                  </div>
+               </div>
+            </div>
 
-           {/* MARKETING & TRACKING */}
-           <section className="card-premium p-8 space-y-6 border-2 border-blue-500/20 shadow-xl shadow-blue-500/5">
-              <h3 className="font-black uppercase tracking-widest text-[10px] text-blue-500 flex items-center gap-2">
-                <Zap className="w-4 h-4" /> Marketing & Tracking (Opcional)
-              </h3>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Inyecta scripts de rastreo para remarketing.</p>
-              <div className="space-y-4">
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Facebook Pixel ID</label>
-                    <input type="text" value={client.fb_pixel_id || ''} onChange={(e) => setClient({...client, fb_pixel_id: e.target.value})} className="input-field" placeholder="Ej: 1234567890..." />
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Google Analytics ID (G-XXXXX)</label>
-                    <input type="text" value={client.ga_tracking_id || ''} onChange={(e) => setClient({...client, ga_tracking_id: e.target.value})} className="input-field" placeholder="Ej: G-XXXXXXXX" />
-                 </div>
-              </div>
-           </section>
+            <div className="space-y-4">
+               <h3 className="font-black italic uppercase text-xs tracking-widest flex items-center gap-2">
+                 <Palette className="w-4 h-4 text-patagonia-gold" /> Personalización
+               </h3>
+               <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-gray-400 ml-1">Color de Marca</label>
+                    <div className="flex gap-3">
+                      <input 
+                        type="color" 
+                        value={formData.brand_color} 
+                        onChange={e => setFormData({...formData, brand_color: e.target.value})}
+                        className="w-12 h-12 rounded-xl cursor-pointer border-4 border-white shadow-sm"
+                      />
+                      <input 
+                        type="text" 
+                        value={formData.brand_color} 
+                        onChange={e => setFormData({...formData, brand_color: e.target.value})}
+                        className="input-premium flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-gray-400 ml-1">Tema Visual</label>
+                    <select 
+                      value={formData.theme} 
+                      onChange={e => setFormData({...formData, theme: e.target.value})}
+                      className="input-premium"
+                    >
+                      <option value="neutral">Neutral (Blanco Institucional)</option>
+                      <option value="stealth">Stealth (Black Edition)</option>
+                      <option value="glass">Glassmorphism (Efecto Cristal)</option>
+                    </select>
+                  </div>
+               </div>
+            </div>
+          </div>
 
-           {/* Captura de Leads */}
-           <section className="card-premium p-8 space-y-8 border-2 border-patagonia-gold/20 shadow-xl shadow-patagonia-gold/5">
-              <div className="flex items-center justify-between">
-                 <h3 className="font-black uppercase tracking-widest text-[10px] text-patagonia-gold flex items-center gap-2">
-                   <UserPlus className="w-4 h-4" /> Captura de Prospectos
-                 </h3>
-                 <div onClick={() => setClient({...client, lead_capture_active: !client.lead_capture_active})} className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${client.lead_capture_active ? 'bg-green-500' : 'bg-gray-200'}`}>
-                    <div className={`w-4 h-4 bg-white rounded-full transition-transform ${client.lead_capture_active ? 'translate-x-6' : ''}`} />
-                 </div>
-              </div>
-              {client.lead_capture_active && (
-                <div className="space-y-6 animate-in slide-in-from-top-4">
-                   <input type="text" value={client.lead_capture_text} onChange={(e) => setClient({...client, lead_capture_text: e.target.value})} className="input-field" placeholder="Texto de invitación" />
-                   <div className="grid grid-cols-3 gap-2">
-                      {['whatsapp', 'email', 'both'].map((type) => (
-                        <button key={type} onClick={() => setClient({...client, lead_capture_type: type})} className={`p-3 rounded-xl border text-[8px] font-black uppercase tracking-widest transition-all ${client.lead_capture_type === type ? 'border-patagonia-gold bg-patagonia-gold/5' : 'border-gray-50 text-gray-400'}`}>{type}</button>
-                      ))}
+          <div className="flex justify-end">
+            <button disabled={saving} className="btn-primary px-10 py-4 flex items-center gap-2">
+              <Save className="w-5 h-5" /> {saving ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="font-black italic uppercase text-xs tracking-widest flex items-center gap-2">
+              <LinkIcon className="w-4 h-4 text-patagonia-gold" /> Lista de Enlaces Activos
+            </h3>
+            <button onClick={addLink} className="btn-secondary text-[10px] py-2 px-4 flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Nuevo Botón
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {links.map((link, index) => (
+              <div key={link.id} className="card-premium p-6 flex flex-col md:flex-row items-center gap-6 group hover:border-patagonia-gold/30 transition-all">
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                   <div className="p-3 bg-gray-50 rounded-xl text-gray-300 group-hover:text-patagonia-gold transition-all">
+                      <GripVertical className="w-5 h-5 cursor-grab" />
+                   </div>
+                   <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-patagonia-gold shadow-lg">
+                      <SmartIconPreview url={link.url} />
                    </div>
                 </div>
-              )}
-           </section>
-        </div>
 
-        <div className="space-y-6">
-           <section className="card-premium p-8 space-y-6">
-              <h3 className="font-black uppercase tracking-widest text-[10px] text-patagonia-gold flex items-center gap-2">
-                <Type className="w-4 h-4" /> Identidad Visual
-              </h3>
-              <div className="space-y-4">
-                 <input type="text" value={client.name} onChange={(e) => setClient({...client, name: e.target.value})} className="input-field" />
-                 <textarea value={client.description} onChange={(e) => setClient({...client, description: e.target.value})} className="input-field h-24" />
-                 <input type="color" value={client.brand_color} onChange={(e) => setClient({...client, brand_color: e.target.value})} className="w-full h-12 rounded-xl cursor-pointer" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 w-full">
+                   <div className="space-y-1">
+                      <label className="text-[8px] font-black uppercase text-gray-400">Título del Botón</label>
+                      <input 
+                        type="text" 
+                        value={link.title} 
+                        onChange={e => updateLink(link.id, { title: e.target.value })}
+                        className="input-premium py-2 text-xs"
+                      />
+                   </div>
+                   <div className="space-y-1">
+                      <label className="text-[8px] font-black uppercase text-gray-400">URL de Destino</label>
+                      <input 
+                        type="text" 
+                        value={link.url} 
+                        onChange={e => updateLink(link.id, { url: e.target.value })}
+                        className="input-premium py-2 text-xs"
+                      />
+                   </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                   <button 
+                    onClick={() => updateLink(link.id, { active: !link.active })}
+                    className={`p-3 rounded-xl border transition-all ${link.active ? 'bg-green-50 text-green-600 border-green-100' : 'bg-gray-50 text-gray-400 border-transparent'}`}
+                   >
+                      <CheckCircle2 className="w-5 h-5" />
+                   </button>
+                   <button 
+                    onClick={() => deleteLink(link.id)}
+                    className="p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all border border-red-100"
+                   >
+                      <Trash2 className="w-5 h-5" />
+                   </button>
+                </div>
               </div>
-           </section>
+            ))}
 
-           <div className="grid gap-4">
-              {['neutral', 'stealth', 'glass'].map((t) => (
-                <button key={t} onClick={() => setClient({...client, theme: t})} className={`w-full p-6 rounded-3xl border-2 text-left transition-all ${client.theme === t ? 'border-patagonia-gold bg-patagonia-gold/5 shadow-xl' : 'border-gray-50 bg-white'}`}>
-                   <p className="font-black italic uppercase tracking-tighter text-xl">{t}</p>
-                </button>
-              ))}
-           </div>
+            {links.length === 0 && (
+              <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-[2.5rem] bg-gray-50/50">
+                <LinkIcon className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">No hay enlaces configurados</p>
+                <button onClick={addLink} className="mt-4 text-patagonia-gold font-black italic uppercase text-xs">Crea el primero ahora</button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-
-      <style jsx>{`
-        .input-field { width: 100%; background: white; border: 1px solid #f3f4f6; border-radius: 1rem; padding: 1rem; font-weight: 700; outline: none; transition: border-color 0.2s; }
-        .input-field:focus { border-color: #facc15; }
-      `}</style>
+      )}
     </div>
   );
+}
+
+function SmartIconPreview({ url }: { url: string }) {
+  const lower = (url || '').toLowerCase();
+  if (lower.includes('wa.me') || lower.includes('whatsapp')) return <MessageCircle className="w-5 h-5" />;
+  if (lower.includes('instagr')) return <div className="w-5 h-5 border-2 border-current rounded-md relative"><div className="absolute top-1 right-1 w-1 h-1 bg-current rounded-full"></div></div>;
+  if (lower.includes('facebo')) return <span className="font-black text-xl leading-none">f</span>;
+  return <Globe className="w-5 h-5" />;
 }

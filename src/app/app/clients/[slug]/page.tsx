@@ -13,7 +13,8 @@ import {
   Calendar,
   Smartphone,
   ChevronRight,
-  Zap
+  Zap,
+  List
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -36,6 +37,7 @@ export default function ClientAnalytics({ params }: { params: Promise<{ slug: st
   const [stats, setStats] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [linkPerformance, setLinkPerformance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,25 +47,18 @@ export default function ClientAnalytics({ params }: { params: Promise<{ slug: st
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Búsqueda Híbrida: Por Slug o por ID
       let query = supabase.from('clients').select('*');
-      
-      if (slug.includes('-')) {
-        query = query.eq('id', slug);
-      } else {
-        query = query.eq('slug', slug);
-      }
+      if (slug.includes('-')) query = query.eq('id', slug);
+      else query = query.eq('slug', slug);
 
       const { data: clientData } = await query.single();
-
       if (!clientData) {
         setLoading(false);
         return;
       }
-
       setClient(clientData);
 
-      // Cargar Métricas Reales
+      // 1. Cargar Métricas Globales
       const { data: views } = await supabase.from('page_views').select('*').eq('client_id', clientData.id);
       const { data: clicks } = await supabase.from('clicks').select('*, links(title)').eq('client_id', clientData.id);
       const { data: leads } = await supabase.from('leads').select('*').eq('client_id', clientData.id);
@@ -79,7 +74,16 @@ export default function ClientAnalytics({ params }: { params: Promise<{ slug: st
         ctr: ctr
       });
 
-      // Logs de Interacción (IPs y UTMs)
+      // 2. Rendimiento de Enlaces (Ranking)
+      const { data: clientLinks } = await supabase
+        .from('links')
+        .select('id, title, clicks')
+        .eq('client_id', clientData.id)
+        .order('clicks', { ascending: false });
+
+      setLinkPerformance(clientLinks || []);
+
+      // 3. Logs Recientes
       const combinedLogs = [
         ...(views || []).map(v => ({ ...v, type: 'VIEW' })),
         ...(clicks || []).map(c => ({ ...c, type: 'CLICK' }))
@@ -87,7 +91,7 @@ export default function ClientAnalytics({ params }: { params: Promise<{ slug: st
 
       setLogs(combinedLogs.slice(0, 10));
 
-      // Data para Gráfica (Últimas 24 horas)
+      // 4. Data para Gráfica (Últimas 24 horas)
       const hourlyData = Array.from({ length: 24 }, (_, i) => {
         const hour = i;
         const vCount = (views || []).filter(v => new Date(v.created_at).getHours() === hour).length;
@@ -106,8 +110,10 @@ export default function ClientAnalytics({ params }: { params: Promise<{ slug: st
   if (loading) return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-4 border-patagonia-gold border-t-transparent rounded-full animate-spin" /></div>;
   if (!client) return <div className="text-center py-20"><h2 className="text-2xl font-black italic uppercase">Cliente no encontrado</h2><Link href="/app" className="mt-4 inline-block text-patagonia-gold font-bold">Volver al Dashboard</Link></div>;
 
+  const maxLinkClicks = Math.max(...linkPerformance.map(l => l.clicks), 1);
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-in fade-in duration-700 pb-20">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/app" className="p-2 hover:bg-gray-100 rounded-full transition-all">
@@ -128,6 +134,7 @@ export default function ClientAnalytics({ params }: { params: Promise<{ slug: st
         </Link>
       </div>
 
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard title="Visitas Totales" value={stats.views} icon={<Users className="text-blue-500" />} color="blue" />
         <StatCard title="Clics en Enlaces" value={stats.clicks} icon={<MousePointer2 className="text-patagonia-gold" />} color="gold" />
@@ -136,6 +143,7 @@ export default function ClientAnalytics({ params }: { params: Promise<{ slug: st
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Gráfica de Calor */}
         <div className="lg:col-span-2 card-premium p-8 space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -162,6 +170,7 @@ export default function ClientAnalytics({ params }: { params: Promise<{ slug: st
           </div>
         </div>
 
+        {/* Actividad Reciente */}
         <div className="card-premium p-8 space-y-6">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-patagonia-gold" />
@@ -180,15 +189,40 @@ export default function ClientAnalytics({ params }: { params: Promise<{ slug: st
                   <p className="text-[8px] text-gray-400 mt-1 flex items-center gap-1 font-bold">
                     <Smartphone className="w-2 h-2" /> {log.ip_address} • {format(new Date(log.created_at), 'HH:mm')}
                   </p>
-                  {log.utm_source && (
-                    <span className="inline-block mt-1 px-1.5 py-0.5 bg-black text-white text-[6px] font-black uppercase tracking-widest rounded">
-                      Via: {log.utm_source}
-                    </span>
-                  )}
                 </div>
               </div>
             ))}
           </div>
+        </div>
+
+        {/* RENDIMIENTO DE ENLACES (Inyección de hoy) */}
+        <div className="lg:col-span-3 card-premium p-8 space-y-8">
+           <div className="flex items-center gap-2">
+              <List className="w-5 h-5 text-patagonia-gold" />
+              <h3 className="font-black italic uppercase text-xs tracking-widest">Rendimiento por Enlace</h3>
+           </div>
+           
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {linkPerformance.map((link) => (
+                <div key={link.id} className="space-y-2 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                   <div className="flex justify-between items-end">
+                      <span className="text-[10px] font-black uppercase tracking-tight truncate max-w-[150px]">{link.title}</span>
+                      <span className="text-xl font-black italic text-patagonia-gold leading-none">{link.clicks}</span>
+                   </div>
+                   <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-black transition-all duration-1000" 
+                        style={{ width: `${(link.clicks / maxLinkClicks) * 100}%` }}
+                      />
+                   </div>
+                   <p className="text-[8px] font-bold uppercase text-gray-400 tracking-widest">Clics totales registrados</p>
+                </div>
+              ))}
+              
+              {linkPerformance.length === 0 && (
+                <p className="col-span-full text-center py-10 text-gray-400 font-bold uppercase text-[10px]">No hay clics registrados en enlaces todavía.</p>
+              )}
+           </div>
         </div>
       </div>
     </div>

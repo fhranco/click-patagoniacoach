@@ -18,7 +18,12 @@ import {
   Zap,
   Phone,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Layout,
+  Navigation,
+  Smartphone,
+  MapPin,
+  Settings2
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -86,7 +91,7 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
           position: link.position
         }).eq('id', link.id);
       }
-      alert('¡Todo Guardado con Éxito! 🏔️✨');
+      alert('¡Configuración Aplicada con Éxito! 🏔️✨');
     } catch (err: any) {
       alert('Error: ' + err.message);
     } finally {
@@ -119,88 +124,192 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
   if (loading) return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 pb-40 px-6">
+    <div className="max-w-7xl mx-auto space-y-10 pb-40 px-8 animate-in fade-in duration-700">
       
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-100 pb-10">
+      {/* HEADER ELITE */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 pt-4">
         <div className="flex items-center gap-6">
-          <Link href={`/app/clients/${slug}`} className="p-3 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 transition-all">
-            <ArrowLeft className="w-5 h-5" />
+          <Link href={`/app/clients`} className="p-3 bg-white border border-gray-100 rounded-full hover:bg-gray-50 transition-all shadow-sm">
+            <ArrowLeft className="w-5 h-5 text-gray-400" />
           </Link>
-          <div>
-            <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Studio</h1>
-            <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-2">Control de Alta Autoridad</p>
+          <div className="space-y-1">
+            <h1 className="text-[42px] font-black italic tracking-tighter uppercase leading-none text-black">Configuración Elite</h1>
+            <p className="text-gray-400 font-bold text-[10px] uppercase tracking-[0.4em]">Control Maestro de Marca y Conversión</p>
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
-          <a href={`/${slug}`} target="_blank" className="flex items-center gap-2 px-8 py-5 bg-white border border-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all shadow-sm">
-            <Eye className="w-5 h-5 text-patagonia-gold" /> Ver Sitio
-          </a>
-          
-          <div className="flex gap-2 p-1.5 bg-gray-100 rounded-2xl">
-            <button onClick={() => setActiveTab('brand')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'brand' ? 'bg-white text-black shadow-lg' : 'text-gray-400'}`}>Marca</button>
-            <button onClick={() => setActiveTab('links')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'links' ? 'bg-white text-black shadow-lg' : 'text-gray-400'}`}>Enlaces</button>
-          </div>
+        <div className="flex items-center gap-4 bg-gray-100 p-1.5 rounded-2xl">
+            <button 
+              onClick={() => setActiveTab('brand')} 
+              className={`flex items-center gap-2 px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'brand' ? 'bg-white text-black shadow-xl shadow-black/5' : 'text-gray-400'}`}
+            >
+              <Layout className="w-4 h-4" /> Marca y Contacto
+            </button>
+            <button 
+              onClick={() => setActiveTab('links')} 
+              className={`flex items-center gap-2 px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'links' ? 'bg-white text-black shadow-xl shadow-black/5' : 'text-gray-400'}`}
+            >
+              <Link2 className="w-4 h-4" /> Lista de Enlaces
+            </button>
         </div>
       </div>
 
       <AnimatePresence mode="wait">
         {activeTab === 'brand' ? (
-          <motion.div key="brand" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-8">
-               <h3 className="font-black italic uppercase text-xs tracking-widest flex items-center gap-3 text-gray-400"><Type className="w-5 h-5 text-patagonia-gold" /> Identidad</h3>
-               <InputField label="Nombre Comercial" value={formData.name} onChange={(v: string) => setFormData({...formData, name: v})} />
-               <InputField label="Slogan / Descripción" value={formData.description} onChange={(v: string) => setFormData({...formData, description: v})} />
-               <InputField label="URL Logotipo" value={formData.logo_url} onChange={(v: string) => setFormData({...formData, logo_url: v})} />
+          <motion.div 
+            key="brand" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="space-y-8"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+              
+              {/* TARJETA: IDENTIDAD VISUAL */}
+              <div className="bg-white p-12 rounded-[2.5rem] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.02)] space-y-10">
+                 <div className="flex items-center gap-4 border-b border-gray-50 pb-6">
+                    <div className="p-3.5 bg-black rounded-2xl"><Smartphone className="w-6 h-6 text-patagonia-gold" /></div>
+                    <h3 className="font-black italic uppercase text-sm tracking-[0.15em]">Identidad Visual</h3>
+                 </div>
+                 
+                 <div className="space-y-8">
+                    <InputField label="Nombre Comercial" value={formData.name} onChange={(v: string) => setFormData({...formData, name: v})} />
+                    <InputField label="Slogan / Descripción" value={formData.description} onChange={(v: string) => setFormData({...formData, description: v})} />
+                    <InputField label="URL del Logotipo" value={formData.logo_url} onChange={(v: string) => setFormData({...formData, logo_url: v})} />
+                 </div>
+              </div>
+
+              {/* TARJETA: CANALES DE CONTACTO (NEGRO) */}
+              <div className="bg-black p-12 rounded-[2.5rem] text-white shadow-2xl space-y-10 relative overflow-hidden flex flex-col justify-between">
+                 <div className="absolute top-0 right-0 p-6 opacity-10"><Zap className="w-24 h-24 text-patagonia-gold" /></div>
+                 
+                 <div className="space-y-10 relative z-10">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-6">
+                       <div className="flex items-center gap-4">
+                          <div className="p-3.5 bg-patagonia-gold rounded-2xl"><Phone className="w-6 h-6 text-black" /></div>
+                          <h3 className="font-black italic uppercase text-sm tracking-[0.15em]">Canales de Contacto</h3>
+                       </div>
+                       <button 
+                        onClick={() => setFormData({...formData, lead_capture_active: !formData.lead_capture_active})}
+                        className={`px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${formData.lead_capture_active ? 'bg-[#22C55E] text-white' : 'bg-white/10 text-gray-500'}`}
+                       >
+                         {formData.lead_capture_active ? 'Barra Activa' : 'Barra Oculta'}
+                       </button>
+                    </div>
+
+                    <div className="space-y-8">
+                       <InputFieldDark label="WhatsApp (Solo números)" value={formData.whatsapp} onChange={(v: string) => setFormData({...formData, whatsapp: v})} placeholder="Ej: 56957636076" />
+                       <InputFieldDark label="Teléfono de Llamada" value={formData.phone} onChange={(v: string) => setFormData({...formData, phone: v})} placeholder="Ej: +56957636076" />
+                       <InputFieldDark label="Dirección (Google Maps)" value={formData.address} onChange={(v: string) => setFormData({...formData, address: v})} placeholder="Pega el link de Google Maps aquí" />
+                    </div>
+                 </div>
+
+                 <div className="pt-8 flex items-start gap-3 opacity-30 relative z-10">
+                    <Settings2 className="w-4 h-4 mt-1" />
+                    <p className="text-[8px] font-bold uppercase leading-relaxed tracking-wider">Estos datos activan los botones flotantes de "Llama", "WhatsApp" y "Dirección" en la parte inferior del micrositio móvil.</p>
+                 </div>
+              </div>
             </div>
 
-            <div className="bg-black p-10 rounded-[2.5rem] text-white shadow-2xl space-y-8 relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-4 opacity-10"><Zap className="w-20 h-20 text-patagonia-gold" /></div>
-               <h3 className="font-black italic uppercase text-xs tracking-widest flex items-center gap-3 text-white/50"><Phone className="w-5 h-5 text-patagonia-gold" /> Canales</h3>
-               <InputFieldDark label="WhatsApp" value={formData.whatsapp} onChange={(v: string) => setFormData({...formData, whatsapp: v})} />
-               <InputFieldDark label="Teléfono de Llamada" value={formData.phone} onChange={(v: string) => setFormData({...formData, phone: v})} />
-               <InputFieldDark label="Google Maps" value={formData.address} onChange={(v: string) => setFormData({...formData, address: v})} />
+            {/* TARJETA: PERSONALIZACIÓN ABAJO */}
+            <div className="bg-white p-12 rounded-[2.5rem] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.02)] space-y-10">
+               <div className="flex items-center gap-4 border-b border-gray-50 pb-6">
+                  <div className="p-3.5 bg-black rounded-2xl"><Palette className="w-6 h-6 text-patagonia-gold" /></div>
+                  <h3 className="font-black italic uppercase text-sm tracking-[0.15em]">Personalización de Interfaz</h3>
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                  <div className="space-y-4">
+                     <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Color de Marca</label>
+                     <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 rounded-2xl border border-gray-100 shadow-inner" style={{ backgroundColor: formData.brand_color || '#000000' }} />
+                        <input 
+                          type="text" 
+                          value={formData.brand_color || '#000000'} 
+                          onChange={(e) => setFormData({...formData, brand_color: e.target.value})}
+                          className="flex-1 px-8 py-5 bg-gray-50 rounded-2xl font-black uppercase tracking-widest text-xs outline-none"
+                        />
+                     </div>
+                  </div>
+
+                  <div className="space-y-4">
+                     <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Tema del Micrositio</label>
+                     <select 
+                      value={formData.theme || 'neutral'}
+                      onChange={(e) => setFormData({...formData, theme: e.target.value})}
+                      className="w-full px-8 py-5 bg-gray-50 rounded-2xl font-black uppercase tracking-widest text-xs outline-none appearance-none"
+                     >
+                        <option value="neutral">Blanco Institucional</option>
+                        <option value="dark">Negro Carbono</option>
+                        <option value="gold">Oro Patagonia</option>
+                     </select>
+                  </div>
+               </div>
+            </div>
+
+            {/* BOTÓN APLICAR ABAJO */}
+            <div className="flex justify-end pt-4">
+               <button 
+                onClick={handleGlobalSave} 
+                disabled={saving}
+                className="bg-[#0A0A0A] text-white px-16 py-8 rounded-[2rem] shadow-[0_30px_70px_rgba(0,0,0,0.2)] flex items-center gap-6 hover:scale-105 active:scale-95 transition-all group"
+               >
+                  <div className={`p-2.5 bg-white/10 rounded-xl ${saving ? 'animate-spin' : 'group-hover:rotate-12 transition-all'}`}>
+                    {saving ? <RefreshCw className="w-6 h-6 text-patagonia-gold" /> : <Save className="w-6 h-6 text-white" />}
+                  </div>
+                  <span className="font-black uppercase italic tracking-[0.2em] text-xs">
+                    {saving ? 'Procesando...' : 'Aplicar Configuración'}
+                  </span>
+               </button>
             </div>
           </motion.div>
         ) : (
-          <motion.div key="links" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="font-black italic uppercase text-xs tracking-widest text-gray-400">Botones Públicos</h3>
-              <button onClick={addLink} className="px-8 py-5 bg-patagonia-gold text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Nuevo Botón</button>
-            </div>
-            {links.map((link) => (
-              <div key={link.id} className="bg-white p-8 rounded-[2rem] border border-gray-100 flex flex-col md:flex-row items-center gap-6 shadow-lg group">
-                <GripVertical className="w-6 h-6 text-gray-200" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 w-full">
-                  <InputField label="Texto del Botón" value={link.title} onChange={(v: string) => updateLocalLink(link.id, { title: v })} />
-                  <InputField label="URL de Destino" value={link.url} onChange={(v: string) => updateLocalLink(link.id, { url: v })} />
-                </div>
-                <div className="flex gap-2 w-full md:w-auto">
-                  <button onClick={() => updateLocalLink(link.id, { active: !link.active })} className={`flex-1 md:flex-none px-6 py-4 rounded-xl text-[8px] font-black uppercase tracking-widest ${link.active ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                    {link.active ? 'Público' : 'Oculto'}
-                  </button>
-                  <button onClick={() => deleteLink(link.id)} className="p-4 bg-red-50 text-red-500 rounded-xl"><Trash2 className="w-5 h-5" /></button>
-                </div>
+          <motion.div key="links" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+            <div className="flex justify-between items-center bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-black rounded-xl"><Link2 className="w-5 h-5 text-patagonia-gold" /></div>
+                <h3 className="font-black italic uppercase text-xs tracking-widest text-black">Botones de Acción</h3>
               </div>
-            ))}
+              <button onClick={addLink} className="px-10 py-5 bg-patagonia-gold text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-patagonia-gold/20">Inyectar Nuevo Enlace</button>
+            </div>
+
+            <div className="space-y-6">
+              {links.map((link) => (
+                <div key={link.id} className="bg-white p-10 rounded-[2.5rem] border border-gray-100 flex flex-col md:flex-row items-center gap-10 shadow-xl shadow-black/[0.01] group hover:border-patagonia-gold/20 transition-all">
+                  <div className="flex items-center gap-6">
+                    <GripVertical className="w-8 h-8 text-gray-200 group-hover:text-patagonia-gold transition-colors" />
+                    <div className="w-16 h-16 bg-black rounded-[1.5rem] flex items-center justify-center text-patagonia-gold shadow-2xl">
+                      <SmartIconPreview url={link.url} />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 w-full">
+                    <InputField label="Texto del Botón" value={link.title} onChange={(v: string) => updateLocalLink(link.id, { title: v })} />
+                    <InputField label="URL de Destino" value={link.url} onChange={(v: string) => updateLocalLink(link.id, { url: v })} />
+                  </div>
+
+                  <div className="flex gap-3 w-full md:w-auto">
+                    <button onClick={() => updateLocalLink(link.id, { active: !link.active })} className={`flex-1 md:flex-none px-6 py-5 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${link.active ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-gray-50 text-gray-400 border-transparent'}`}>
+                      {link.active ? 'Visible' : 'Oculto'}
+                    </button>
+                    <button onClick={() => deleteLink(link.id)} className="p-5 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-6 h-6" /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-10 right-10 z-50">
-        <button 
-          onClick={handleGlobalSave} 
-          disabled={saving}
-          className="bg-black text-white px-12 py-7 rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.5)] flex items-center gap-5 hover:scale-110 active:scale-95 transition-all border border-white/10 group"
-        >
-          <div className={`p-2.5 bg-patagonia-gold rounded-xl ${saving ? 'animate-spin' : 'group-hover:rotate-12 transition-all'}`}>
-            {saving ? <RefreshCw className="w-7 h-7 text-black" /> : <Save className="w-7 h-7 text-black" />}
-          </div>
-          <span className="font-black uppercase italic tracking-widest text-xs">
-            {saving ? 'Guardando...' : 'Guardar Cambios'}
-          </span>
-        </button>
+      {/* BOTÓN FLOTANTE VISTA PREVIA (EXCLUSIVO FRANCO) */}
+      <div className="fixed bottom-10 left-10 z-50">
+          <a 
+            href={`/${slug}`} 
+            target="_blank" 
+            className="flex items-center gap-4 px-10 py-6 bg-white border border-gray-100 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.1)] hover:bg-black hover:text-white transition-all group"
+          >
+            <Eye className="w-6 h-6 text-patagonia-gold group-hover:rotate-12 transition-all" />
+            <span className="font-black uppercase italic tracking-widest text-[10px]">Vista Previa</span>
+          </a>
       </div>
     </div>
   );
@@ -208,28 +317,37 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
 
 function InputField({ label, value, onChange }: any) {
   return (
-    <div className="space-y-2 w-full">
-      <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-1">{label}</label>
+    <div className="space-y-3 w-full">
+      <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">{label}</label>
       <input 
         type="text" 
         value={value || ''} 
         onChange={e => onChange(e.target.value)} 
-        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-patagonia-gold/20 text-black" 
+        className="w-full px-8 py-5 bg-gray-50 border-none rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-patagonia-gold/20 text-black placeholder:text-gray-200" 
       />
     </div>
   );
 }
 
-function InputFieldDark({ label, value, onChange }: any) {
+function InputFieldDark({ label, value, onChange, placeholder }: any) {
   return (
-    <div className="space-y-2 w-full">
-      <label className="text-[9px] font-black uppercase text-gray-600 tracking-widest ml-1">{label}</label>
+    <div className="space-y-3 w-full">
+      <label className="text-[10px] font-black uppercase text-gray-600 tracking-widest ml-1">{label}</label>
       <input 
         type="text" 
         value={value || ''} 
         onChange={e => onChange(e.target.value)} 
-        className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-patagonia-gold/40 text-white" 
+        placeholder={placeholder}
+        className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-patagonia-gold/40 text-white placeholder:text-white/10" 
       />
     </div>
   );
+}
+
+function SmartIconPreview({ url }: { url: string }) {
+  const lower = (url || '').toLowerCase();
+  if (lower.includes('wa.me') || lower.includes('whatsapp')) return <MessageCircle className="w-6 h-6" />;
+  if (lower.includes('instagr')) return <div className="w-6 h-6 border-2 border-current rounded-lg relative"><div className="absolute top-1 right-1 w-1.5 h-1.5 bg-current rounded-full"></div></div>;
+  if (lower.includes('facebo')) return <span className="font-black text-2xl leading-none">f</span>;
+  return <Globe className="w-6 h-6" />;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use, useCallback, memo } from 'react';
+import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { 
@@ -22,45 +22,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Componente de Input Optimizado para evitar LAG
-const FastInput = memo(({ label, value, onChange, placeholder, dark = false }: any) => {
-  const [localValue, setLocalValue] = useState(value || '');
-
-  useEffect(() => {
-    setLocalValue(value || '');
-  }, [value]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalValue(e.target.value);
-  };
-
-  const handleBlur = () => {
-    if (localValue !== value) {
-      onChange(localValue);
-    }
-  };
-
-  return (
-    <div className="space-y-2 w-full">
-      <label className={`text-[9px] font-black uppercase tracking-widest ml-1 ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{label}</label>
-      <input 
-        type="text" 
-        value={localValue} 
-        onChange={handleChange}
-        onBlur={handleBlur}
-        placeholder={placeholder}
-        className={`w-full px-6 py-4 rounded-2xl font-bold text-xs outline-none transition-all ${
-          dark 
-          ? 'bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-patagonia-gold/40 placeholder:text-white/20' 
-          : 'bg-gray-50 border-none text-black focus:ring-2 focus:ring-patagonia-gold/20'
-        }`} 
-      />
-    </div>
-  );
-});
-
-FastInput.displayName = 'FastInput';
 
 export default function EditClient({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -125,7 +86,7 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
           position: link.position
         }).eq('id', link.id);
       }
-      alert('¡Sincronización Total Exitosa! 🏔️✨');
+      alert('¡Todo Guardado con Éxito! 🏔️✨');
     } catch (err: any) {
       alert('Error: ' + err.message);
     } finally {
@@ -145,9 +106,9 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
     if (data) setLinks([...links, data]);
   };
 
-  const updateLocalLink = useCallback((id: string, updates: any) => {
-    setLinks(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
-  }, []);
+  const updateLocalLink = (id: string, updates: any) => {
+    setLinks(links.map(l => l.id === id ? { ...l, ...updates } : l));
+  };
 
   const deleteLink = async (id: string) => {
     if (!confirm('¿Seguro?')) return;
@@ -168,7 +129,7 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
           </Link>
           <div>
             <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Studio</h1>
-            <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-2">Versión Ultra-Fluida</p>
+            <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-2">Control de Alta Autoridad</p>
           </div>
         </div>
         
@@ -188,36 +149,36 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
         {activeTab === 'brand' ? (
           <motion.div key="brand" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-8">
-               <h3 className="font-black italic uppercase text-xs tracking-widest flex items-center gap-3"><Type className="w-5 h-5 text-patagonia-gold" /> Identidad</h3>
-               <FastInput label="Nombre Comercial" value={formData.name} onChange={(v: string) => setFormData({...formData, name: v})} />
-               <FastInput label="Descripción" value={formData.description} onChange={(v: string) => setFormData({...formData, description: v})} />
-               <FastInput label="Logo URL" value={formData.logo_url} onChange={(v: string) => setFormData({...formData, logo_url: v})} />
+               <h3 className="font-black italic uppercase text-xs tracking-widest flex items-center gap-3 text-gray-400"><Type className="w-5 h-5 text-patagonia-gold" /> Identidad</h3>
+               <InputField label="Nombre Comercial" value={formData.name} onChange={(v: string) => setFormData({...formData, name: v})} />
+               <InputField label="Slogan / Descripción" value={formData.description} onChange={(v: string) => setFormData({...formData, description: v})} />
+               <InputField label="URL Logotipo" value={formData.logo_url} onChange={(v: string) => setFormData({...formData, logo_url: v})} />
             </div>
 
             <div className="bg-black p-10 rounded-[2.5rem] text-white shadow-2xl space-y-8 relative overflow-hidden">
                <div className="absolute top-0 right-0 p-4 opacity-10"><Zap className="w-20 h-20 text-patagonia-gold" /></div>
-               <h3 className="font-black italic uppercase text-xs tracking-widest flex items-center gap-3"><Phone className="w-5 h-5 text-patagonia-gold" /> Canales</h3>
-               <FastInput dark label="WhatsApp" value={formData.whatsapp} onChange={(v: string) => setFormData({...formData, whatsapp: v})} />
-               <FastInput dark label="Llamada" value={formData.phone} onChange={(v: string) => setFormData({...formData, phone: v})} />
-               <FastInput dark label="Google Maps" value={formData.address} onChange={(v: string) => setFormData({...formData, address: v})} />
+               <h3 className="font-black italic uppercase text-xs tracking-widest flex items-center gap-3 text-white/50"><Phone className="w-5 h-5 text-patagonia-gold" /> Canales</h3>
+               <InputFieldDark label="WhatsApp" value={formData.whatsapp} onChange={(v: string) => setFormData({...formData, whatsapp: v})} />
+               <InputFieldDark label="Teléfono de Llamada" value={formData.phone} onChange={(v: string) => setFormData({...formData, phone: v})} />
+               <InputFieldDark label="Google Maps" value={formData.address} onChange={(v: string) => setFormData({...formData, address: v})} />
             </div>
           </motion.div>
         ) : (
           <motion.div key="links" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="font-black italic uppercase text-xs tracking-widest text-gray-400">Estructura</h3>
+              <h3 className="font-black italic uppercase text-xs tracking-widest text-gray-400">Botones Públicos</h3>
               <button onClick={addLink} className="px-8 py-5 bg-patagonia-gold text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Nuevo Botón</button>
             </div>
             {links.map((link) => (
               <div key={link.id} className="bg-white p-8 rounded-[2rem] border border-gray-100 flex flex-col md:flex-row items-center gap-6 shadow-lg group">
                 <GripVertical className="w-6 h-6 text-gray-200" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 w-full">
-                  <FastInput label="Título" value={link.title} onChange={(v: string) => updateLocalLink(link.id, { title: v })} />
-                  <FastInput label="URL" value={link.url} onChange={(v: string) => updateLocalLink(link.id, { url: v })} />
+                  <InputField label="Texto del Botón" value={link.title} onChange={(v: string) => updateLocalLink(link.id, { title: v })} />
+                  <InputField label="URL de Destino" value={link.url} onChange={(v: string) => updateLocalLink(link.id, { url: v })} />
                 </div>
                 <div className="flex gap-2 w-full md:w-auto">
                   <button onClick={() => updateLocalLink(link.id, { active: !link.active })} className={`flex-1 md:flex-none px-6 py-4 rounded-xl text-[8px] font-black uppercase tracking-widest ${link.active ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                    {link.active ? 'Activo' : 'Oculto'}
+                    {link.active ? 'Público' : 'Oculto'}
                   </button>
                   <button onClick={() => deleteLink(link.id)} className="p-4 bg-red-50 text-red-500 rounded-xl"><Trash2 className="w-5 h-5" /></button>
                 </div>
@@ -227,7 +188,6 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
         )}
       </AnimatePresence>
 
-      {/* BOTÓN GUARDADO GLOBAL */}
       <div className="fixed bottom-10 right-10 z-50">
         <button 
           onClick={handleGlobalSave} 
@@ -242,6 +202,34 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
           </span>
         </button>
       </div>
+    </div>
+  );
+}
+
+function InputField({ label, value, onChange }: any) {
+  return (
+    <div className="space-y-2 w-full">
+      <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-1">{label}</label>
+      <input 
+        type="text" 
+        value={value || ''} 
+        onChange={e => onChange(e.target.value)} 
+        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-patagonia-gold/20 text-black" 
+      />
+    </div>
+  );
+}
+
+function InputFieldDark({ label, value, onChange }: any) {
+  return (
+    <div className="space-y-2 w-full">
+      <label className="text-[9px] font-black uppercase text-gray-600 tracking-widest ml-1">{label}</label>
+      <input 
+        type="text" 
+        value={value || ''} 
+        onChange={e => onChange(e.target.value)} 
+        className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-patagonia-gold/40 text-white" 
+      />
     </div>
   );
 }

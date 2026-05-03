@@ -11,10 +11,13 @@ import {
   X,
   Terminal
 } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const router = useRouter();
 
   const menuItems = [
     { label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, href: '/app' },
@@ -22,6 +25,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: 'Registros', icon: <Terminal className="w-5 h-5" />, href: '/app/logs' },
     { label: 'Configuración', icon: <Settings className="w-5 h-5" />, href: '/app/settings' },
   ];
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -48,10 +56,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         <div className="pt-8 border-t border-gray-100">
-           <button className="flex items-center gap-4 px-6 py-4 text-gray-400 hover:text-red-500 transition-all font-medium">
-             <LogOut className="w-5 h-5" />
-             Cerrar Sesión
-           </button>
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 p-4 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-2xl transition-all group"
+            >
+              <LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+              <span className="font-bold text-xs uppercase tracking-widest">Cerrar Sesión</span>
+            </button>
         </div>
       </aside>
 

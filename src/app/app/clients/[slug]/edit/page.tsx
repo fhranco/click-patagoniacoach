@@ -91,24 +91,29 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
           position: link.position
         }).eq('id', link.id);
       }
-      alert('¡Configuración Aplicada con Éxito! 🏔️✨');
+      alert('¡Configuración Elite Sincronizada! 🏔️✨');
     } catch (err: any) {
-      alert('Error: ' + err.message);
+      alert('Error de guardado: ' + err.message);
     } finally {
       setSaving(false);
     }
   };
 
   const addLink = async () => {
-    const newLink = {
-      client_id: formData.id,
-      title: 'Nuevo Enlace',
-      url: 'https://',
-      position: links.length,
-      active: true
-    };
-    const { data } = await supabase.from('links').insert(newLink).select().single();
-    if (data) setLinks([...links, data]);
+    try {
+      const newLink = {
+        client_id: formData.id,
+        title: 'Nuevo Enlace',
+        url: 'https://',
+        position: links.length,
+        active: true
+      };
+      const { data, error } = await supabase.from('links').insert(newLink).select().single();
+      if (error) throw error;
+      if (data) setLinks([...links, data]);
+    } catch (err: any) {
+      alert("Error al inyectar enlace: " + err.message);
+    }
   };
 
   const updateLocalLink = (id: string, updates: any) => {
@@ -116,9 +121,24 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
   };
 
   const deleteLink = async (id: string) => {
-    if (!confirm('¿Seguro?')) return;
-    await supabase.from('links').delete().eq('id', id);
-    setLinks(links.filter(l => l.id !== id));
+    if (!confirm('¿Deseas eliminar este enlace permanentemente?')) return;
+    
+    try {
+      // 1. Intentar borrar en la nube primero
+      const { error } = await supabase
+        .from('links')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // 2. Si tiene éxito, borrar localmente para refrescar la UI
+      setLinks(prev => prev.filter(l => l.id !== id));
+      
+    } catch (err: any) {
+      console.error("Delete error:", err);
+      alert("No se pudo eliminar el enlace: " + err.message);
+    }
   };
 
   if (loading) return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" /></div>;
@@ -164,7 +184,6 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
           >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
               
-              {/* TARJETA: IDENTIDAD VISUAL */}
               <div className="bg-white p-12 rounded-[2.5rem] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.02)] space-y-10">
                  <div className="flex items-center gap-4 border-b border-gray-50 pb-6">
                     <div className="p-3.5 bg-black rounded-2xl"><Smartphone className="w-6 h-6 text-patagonia-gold" /></div>
@@ -178,7 +197,6 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
                  </div>
               </div>
 
-              {/* TARJETA: CANALES DE CONTACTO (NEGRO) */}
               <div className="bg-black p-12 rounded-[2.5rem] text-white shadow-2xl space-y-10 relative overflow-hidden flex flex-col justify-between">
                  <div className="absolute top-0 right-0 p-6 opacity-10"><Zap className="w-24 h-24 text-patagonia-gold" /></div>
                  
@@ -210,7 +228,6 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
               </div>
             </div>
 
-            {/* TARJETA: PERSONALIZACIÓN ABAJO */}
             <div className="bg-white p-12 rounded-[2.5rem] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.02)] space-y-10">
                <div className="flex items-center gap-4 border-b border-gray-50 pb-6">
                   <div className="p-3.5 bg-black rounded-2xl"><Palette className="w-6 h-6 text-patagonia-gold" /></div>
@@ -246,7 +263,6 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
                </div>
             </div>
 
-            {/* BOTÓN APLICAR ABAJO */}
             <div className="flex justify-end pt-4">
                <button 
                 onClick={handleGlobalSave} 
@@ -291,7 +307,13 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
                     <button onClick={() => updateLocalLink(link.id, { active: !link.active })} className={`flex-1 md:flex-none px-6 py-5 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${link.active ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-gray-50 text-gray-400 border-transparent'}`}>
                       {link.active ? 'Visible' : 'Oculto'}
                     </button>
-                    <button onClick={() => deleteLink(link.id)} className="p-5 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-6 h-6" /></button>
+                    {/* BOTÓN ELIMINAR BLINDADO */}
+                    <button 
+                      onClick={() => deleteLink(link.id)} 
+                      className="p-5 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-red-100"
+                    >
+                      <Trash2 className="w-6 h-6" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -300,7 +322,6 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
         )}
       </AnimatePresence>
 
-      {/* BOTÓN FLOTANTE VISTA PREVIA (EXCLUSIVO FRANCO) */}
       <div className="fixed bottom-10 left-10 z-50">
           <a 
             href={`/${slug}`} 

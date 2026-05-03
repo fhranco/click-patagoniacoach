@@ -11,7 +11,9 @@ import {
   CheckCircle2, 
   XCircle,
   Settings2,
-  ChevronRight
+  ChevronRight,
+  Users,
+  Eye
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -77,12 +79,14 @@ export default function ClientsList() {
               key={client.id}
               className="card-premium group p-6 flex flex-col md:flex-row items-center justify-between gap-6 hover:translate-x-2 transition-transform cursor-pointer"
             >
-              <Link href={`/app/clients/${client.id}`} className="flex flex-1 items-center gap-6 w-full">
+              <Link href={`/app/clients/${client.slug}`} className="flex flex-1 items-center gap-6 w-full">
                 <div 
                   className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner"
                   style={{ backgroundColor: client.brand_color, color: '#fff' }}
                 >
-                  {client.name[0]}
+                  {client.logo_url ? (
+                    <img src={client.logo_url} className="w-full h-full object-cover rounded-2xl" alt="" />
+                  ) : client.name[0]}
                 </div>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-3">
@@ -109,18 +113,20 @@ export default function ClientsList() {
                 <Link 
                   href={`/${client.slug}`} 
                   target="_blank"
-                  className="p-3 rounded-xl bg-gray-50 text-gray-400 hover:text-patagonia-gold hover:bg-patagonia-gold/10 transition-all"
+                  title="Ver Página Pública"
+                  className="p-3 rounded-xl bg-gray-50 text-gray-400 hover:text-patagonia-gold hover:bg-patagonia-gold/10 transition-all flex items-center gap-2 group/btn"
                 >
-                  <ExternalLink className="w-5 h-5" />
+                  <Eye className="w-5 h-5" />
+                  <span className="text-[8px] font-black uppercase tracking-widest hidden group-hover/btn:block">Vista Previa</span>
                 </Link>
                 <Link 
-                  href={`/app/clients/${client.id}`}
+                  href={`/app/clients/${client.slug}`}
                   className="p-3 rounded-xl bg-gray-50 text-gray-400 hover:text-black hover:bg-gray-100 transition-all"
                 >
                   <Settings2 className="w-5 h-5" />
                 </Link>
                 <Link 
-                  href={`/app/clients/${client.id}`}
+                  href={`/app/clients/${client.slug}`}
                   className="ml-4 p-4 rounded-2xl bg-black text-white group-hover:bg-patagonia-gold group-hover:text-black transition-all shadow-lg shadow-black/5"
                 >
                   <ChevronRight className="w-6 h-6" />

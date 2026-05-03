@@ -8,7 +8,8 @@ import {
   Zap, 
   LogOut,
   Menu,
-  X
+  X,
+  Terminal
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -18,6 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const menuItems = [
     { label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, href: '/app' },
     { label: 'Clientes', icon: <Users className="w-5 h-5" />, href: '/app/clients' },
+    { label: 'Registros', icon: <Terminal className="w-5 h-5" />, href: '/app/logs' },
     { label: 'Configuración', icon: <Settings className="w-5 h-5" />, href: '/app/settings' },
   ];
 

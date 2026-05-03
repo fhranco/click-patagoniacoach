@@ -38,23 +38,22 @@ export default function NewClient() {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `logos/${fileName}`;
+      const filePath = `logo/${fileName}`;
 
-      // 1. Subir a Supabase Storage (Asegúrate de crear el bucket 'logos')
+      // FORZANDO SINGULAR 'logo'
       const { error: uploadError } = await supabase.storage
-        .from('logos')
+        .from('logo')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      // 2. Obtener URL pública
       const { data: { publicUrl } } = supabase.storage
-        .from('logos')
+        .from('logo')
         .getPublicUrl(filePath);
 
       setFormData(prev => ({ ...prev, logo_url: publicUrl }));
-    } catch (err) {
-      alert('Error subiendo imagen. ¿Creaste el bucket "logos" en Supabase Storage?');
+    } catch (err: any) {
+      alert('ERROR DE SUBIDA: ' + (err.message || 'Bucket no encontrado'));
       console.error(err);
     } finally {
       setIsUploading(false);
@@ -99,7 +98,6 @@ export default function NewClient() {
            </div>
            
            <div className="space-y-6">
-              {/* Logo Upload Section */}
               <div className="space-y-4">
                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Logo de la Marca</label>
                 <div className="flex items-center gap-6">
@@ -108,8 +106,9 @@ export default function NewClient() {
                       <>
                         <Image src={formData.logo_url} alt="Logo preview" fill className="object-cover" />
                         <button 
+                          type="button"
                           onClick={() => setFormData({...formData, logo_url: ''})}
-                          className="absolute top-1 right-1 p-1 bg-black text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-1 right-1 p-1 bg-black text-white rounded-lg z-10"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -135,7 +134,7 @@ export default function NewClient() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Slug URL (agenciapatagoniacoach.click/slug)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Slug URL</label>
                 <div className="relative">
                   <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 font-mono text-sm">/</span>
                   <input required type="text" placeholder="ruta9" className="input-patagonia pl-10 font-mono lowercase" value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})} />

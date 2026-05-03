@@ -7,181 +7,132 @@ import {
   MousePointer2, 
   Eye, 
   TrendingUp,
-  ArrowUpRight,
   PlusCircle,
-  Activity
+  RefreshCw,
+  AlertTriangle,
+  Zap,
+  Target
 } from 'lucide-react';
 import Link from 'next/link';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  AreaChart,
-  Area
-} from 'recharts';
 
 export default function DashboardSummary() {
   const [stats, setStats] = useState({
     totalClients: 0,
     totalViews: 0,
     totalClicks: 0,
-    ctr: 0
+    totalLeads: 0,
+    ctr: 0,
+    cr: 0 // Conversion Rate (Leads / Clicks)
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [debug, setDebug] = useState<any>(null);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      // En una app real, usaríamos funciones de agregación de Supabase o RPCs
-      // Para este MVP, haremos consultas paralelas
-      const [clients, views, clicks] = await Promise.all([
-        supabase.from('clients').select('id', { count: 'exact' }),
-        supabase.from('page_views').select('id', { count: 'exact' }),
-        supabase.from('clicks').select('id', { count: 'exact' })
-      ]);
+  const fetchStats = async () => {
+    setRefreshing(true);
+    try {
+      const { count: clientsCount, error: e1 } = await supabase.from('clients').select('*', { count: 'exact', head: true });
+      const { count: viewsCount, error: e2 } = await supabase.from('page_views').select('*', { count: 'exact', head: true });
+      const { count: clicksCount, error: e3 } = await supabase.from('clicks').select('*', { count: 'exact', head: true });
+      const { count: leadsCount, error: e4 } = await supabase.from('leads').select('*', { count: 'exact', head: true });
 
-      const vCount = views.count || 0;
-      const cCount = clicks.count || 0;
+      if (e1 || e2 || e3 || e4) setDebug({ e1, e2, e3, e4 });
+
+      const v = viewsCount || 0;
+      const c = clicksCount || 0;
+      const l = leadsCount || 0;
 
       setStats({
-        totalClients: clients.count || 0,
-        totalViews: vCount,
-        totalClicks: cCount,
-        ctr: vCount > 0 ? (cCount / vCount) * 100 : 0
+        totalClients: clientsCount || 0,
+        totalViews: v,
+        totalClicks: c,
+        totalLeads: l,
+        ctr: v > 0 ? (c / v) * 100 : 0,
+        cr: c > 0 ? (l / c) * 100 : 0
       });
+    } catch (err: any) {
+      setDebug({ fatal: err.message });
+    } finally {
       setLoading(false);
-    };
+      setRefreshing(false);
+    }
+  };
 
+  useEffect(() => {
     fetchStats();
   }, []);
 
-  const data = [
-    { name: 'Lun', visitas: 400, clics: 240 },
-    { name: 'Mar', visitas: 300, clics: 139 },
-    { name: 'Mie', visitas: 200, clics: 980 },
-    { name: 'Jue', visitas: 278, clics: 390 },
-    { name: 'Vie', visitas: 189, clics: 480 },
-    { name: 'Sab', visitas: 239, clics: 380 },
-    { name: 'Dom', visitas: 349, clics: 430 },
-  ];
+  if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader /></div>;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 pb-32">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black italic tracking-tighter">OVERVIEW.</h1>
-          <p className="text-gray-400 font-light">Métricas generales de la plataforma PatagoniaCoach Click.</p>
+          <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none text-black">Master Overview.</h1>
+          <p className="text-gray-400 font-light text-sm mt-2">Inteligencia en tiempo real de PatagoniaCoach Click.</p>
         </div>
-        <Link href="/app/clients/new" className="btn-primary flex items-center gap-2">
-          <PlusCircle className="w-5 h-5" />
-          Nuevo Cliente
-        </Link>
+        <div className="flex items-center gap-4">
+          <button onClick={fetchStats} className={`p-4 rounded-2xl bg-white border border-gray-100 shadow-sm transition-all active:scale-95 ${refreshing ? 'animate-spin' : ''}`}><RefreshCw className="w-5 h-5" /></button>
+          <Link href="/app/clients/new" className="btn-primary flex items-center gap-2"><PlusCircle className="w-5 h-5" /> Nuevo Cliente</Link>
+        </div>
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         {[
-          { label: 'Total Clientes', value: stats.totalClients, icon: <Users />, color: 'bg-blue-500' },
-          { label: 'Visitas Totales', value: stats.totalViews.toLocaleString(), icon: <Eye />, color: 'bg-purple-500' },
-          { label: 'Clics Totales', value: stats.totalClicks.toLocaleString(), icon: <MousePointer2 />, color: 'bg-patagonia-gold' },
-          { label: 'CTR Promedio', value: `${stats.ctr.toFixed(1)}%`, icon: <TrendingUp />, color: 'bg-green-500' },
-        ].map((item, i) => (
-          <div key={i} className="card-premium p-6 flex flex-col justify-between h-40">
-            <div className="flex justify-between items-start">
-              <div className={`p-3 rounded-2xl text-white ${item.color}`}>
-                {item.icon}
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-green-500 flex items-center gap-1">
-                +12% <ArrowUpRight className="w-3 h-3" />
-              </span>
-            </div>
-            <div>
-              <p className="text-3xl font-black italic tracking-tighter">{item.value}</p>
-              <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400">{item.label}</p>
-            </div>
+          { label: 'Clientes', val: stats.totalClients, icon: <Users className="w-5 h-5" />, color: 'bg-black' },
+          { label: 'Visitas', val: stats.totalViews, icon: <Eye className="w-5 h-5" />, color: 'bg-zinc-800' },
+          { label: 'Clics', val: stats.totalClicks, icon: <MousePointer2 className="w-5 h-5" />, color: 'bg-patagonia-gold' },
+          { label: 'Leads', val: stats.totalLeads, icon: <Zap className="w-5 h-5 text-black" />, color: 'bg-white border-2 border-patagonia-gold' },
+          { label: 'CTR', val: `${stats.ctr.toFixed(1)}%`, icon: <TrendingUp className="w-5 h-5" />, color: 'bg-blue-500' },
+          { label: 'Conversion', val: `${stats.cr.toFixed(1)}%`, icon: <Target className="w-5 h-5" />, color: 'bg-green-500' }
+        ].map((m, i) => (
+          <div key={i} className="card-premium p-6 flex flex-col justify-between h-44 hover:shadow-2xl hover:-translate-y-1 transition-all">
+             <div className={`${m.color} w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg`}>{m.icon}</div>
+             <div>
+                <p className={`text-4xl font-black italic tracking-tighter ${m.label === 'Leads' ? 'text-patagonia-gold' : 'text-black'}`}>{m.val}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">{m.label}</p>
+             </div>
           </div>
         ))}
       </div>
 
-      {/* Chart Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 card-premium space-y-8">
-           <div className="flex items-center justify-between">
-              <h3 className="font-bold flex items-center gap-2">
-                <Activity className="w-5 h-5 text-patagonia-gold" />
-                Rendimiento 7 Días
-              </h3>
-              <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
-                 <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full" /> Visitas
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-patagonia-gold rounded-full" /> Clics
-                 </div>
-              </div>
-           </div>
-           <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
-                <defs>
-                  <linearGradient id="colorVisitas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#000" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#000" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{fontSize: 10, fontWeight: 700, fill: '#9ca3af'}}
-                  dy={10}
-                />
-                <YAxis hide />
-                <Tooltip 
-                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)'}}
-                />
-                <Area type="monotone" dataKey="visitas" stroke="#000" strokeWidth={3} fillOpacity={1} fill="url(#colorVisitas)" />
-                <Area type="monotone" dataKey="clics" stroke="#facc15" strokeWidth={3} fill="transparent" />
-              </AreaChart>
-            </ResponsiveContainer>
-           </div>
-        </div>
-
-        <div className="card-premium space-y-6">
-           <h3 className="font-bold">Clientes con más Tráfico</h3>
-           <div className="space-y-4">
-              {[
-                { name: 'Ruta9', slug: '/ruta9', views: 1240 },
-                { name: 'Corcoran', slug: '/corcoran', views: 890 },
-                { name: 'Orthomed', slug: '/orthomed', views: 560 }
-              ].map((c, i) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 hover:bg-white transition-all border border-transparent hover:border-gray-100 group">
-                   <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white font-bold text-xs">
-                        {c.name[0]}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold">{c.name}</p>
-                        <p className="text-[10px] text-gray-400">{c.slug}</p>
-                      </div>
-                   </div>
-                   <div className="text-right">
-                      <p className="text-sm font-black">{c.views.toLocaleString()}</p>
-                      <p className="text-[10px] uppercase text-gray-400 font-bold">Visitas</p>
-                   </div>
-                </div>
-              ))}
-           </div>
-           <Link href="/app/clients" className="block text-center text-[10px] font-black uppercase tracking-widest text-patagonia-gold hover:underline pt-4">
-              Ver todos los clientes
-           </Link>
-        </div>
+      {/* Secciones de acción rápida */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+         <div className="space-y-6">
+            <h3 className="font-black uppercase tracking-widest text-xs border-l-4 border-patagonia-gold pl-4">Próximos Pasos</h3>
+            <div className="space-y-4">
+               <div className="card-premium p-6 flex items-center gap-6">
+                  <div className="p-3 bg-gray-50 rounded-xl text-gray-400"><PlusCircle /></div>
+                  <div>
+                     <p className="font-bold text-sm">Añade un nuevo cliente</p>
+                     <p className="text-[10px] text-gray-400 uppercase tracking-widest">Empieza a captar leads hoy mismo.</p>
+                  </div>
+               </div>
+               <div className="card-premium p-6 flex items-center gap-6">
+                  <div className="p-3 bg-gray-50 rounded-xl text-gray-400"><Target /></div>
+                  <div>
+                     <p className="font-bold text-sm">Optimiza tus conversiones</p>
+                     <p className="text-[10px] text-gray-400 uppercase tracking-widest">Revisa qué links tienen más clics.</p>
+                  </div>
+               </div>
+            </div>
+         </div>
+         
+         <div className="bg-black rounded-[3rem] p-10 text-white flex flex-col justify-between overflow-hidden relative group">
+            <div className="absolute -top-20 -right-20 w-64 h-64 bg-patagonia-gold rounded-full blur-[120px] opacity-20 group-hover:opacity-40 transition-opacity" />
+            <div className="relative z-10 space-y-6">
+               <h3 className="text-3xl font-black italic uppercase leading-none tracking-tighter">PatagoniaCoach<br />Click SaaS.</h3>
+               <p className="text-gray-400 text-sm font-light max-w-xs">Tu plataforma está operativa y sincronizada con la nube. El motor de Inteligencia Digital está recolectando datos.</p>
+            </div>
+            <Link href="/app/clients" className="relative z-10 mt-8 py-4 px-8 bg-patagonia-gold text-black rounded-2xl font-black uppercase text-[10px] tracking-widest w-fit hover:scale-105 transition-transform">Gestionar Red</Link>
+         </div>
       </div>
     </div>
   );
+}
+
+function Loader() {
+  return <div className="w-12 h-12 border-4 border-patagonia-gold border-t-transparent rounded-full animate-spin" />;
 }

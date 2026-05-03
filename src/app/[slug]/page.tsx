@@ -10,7 +10,12 @@ import {
   ChevronRight,
   ShieldCheck,
   Zap,
-  ExternalLink
+  ExternalLink,
+  Instagram,
+  Facebook,
+  Linkedin,
+  FileText,
+  Tag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -120,7 +125,7 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
           >
             <div className="flex items-center gap-4">
                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-black shadow-sm group-hover:bg-patagonia-gold transition-colors">
-                  <SmartIcon url={link.url} />
+                  <SmartIcon iconId={link.icon} url={link.url} />
                </div>
                <span className="font-black italic uppercase text-[11px] tracking-tighter">{link.title}</span>
             </div>
@@ -150,7 +155,7 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
                {client.whatsapp && (
                  <a href={`https://wa.me/${client.whatsapp.replace(/\D/g, '')}`} target="_blank" className="flex flex-col items-center gap-1.5 py-3 px-4 group">
                     <div className="p-2.5 bg-white/5 rounded-2xl group-hover:bg-patagonia-gold transition-all shadow-inner">
-                      <MessageCircle className="w-5 h-5 text-white group-hover:text-black" />
+                       <MessageCircle className="w-5 h-5 text-white group-hover:text-black" />
                     </div>
                     <span className="text-[7px] font-black uppercase tracking-widest text-white/40 group-hover:text-white">Chat</span>
                  </a>
@@ -159,7 +164,7 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
                {client.phone && (
                  <a href={`tel:${client.phone}`} className="flex flex-col items-center gap-1.5 py-3 px-4 group">
                     <div className="p-2.5 bg-white/5 rounded-2xl group-hover:bg-patagonia-gold transition-all shadow-inner">
-                      <Phone className="w-5 h-5 text-white group-hover:text-black" />
+                       <Phone className="w-5 h-5 text-white group-hover:text-black" />
                     </div>
                     <span className="text-[7px] font-black uppercase tracking-widest text-white/40 group-hover:text-white">Llamar</span>
                  </a>
@@ -168,7 +173,7 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
                {client.address && (
                  <a href={client.address} target="_blank" className="flex flex-col items-center gap-1.5 py-3 px-4 group">
                     <div className="p-2.5 bg-white/5 rounded-2xl group-hover:bg-patagonia-gold transition-all shadow-inner">
-                      <MapPin className="w-5 h-5 text-white group-hover:text-black" />
+                       <MapPin className="w-5 h-5 text-white group-hover:text-black" />
                     </div>
                     <span className="text-[7px] font-black uppercase tracking-widest text-white/40 group-hover:text-white">Mapa</span>
                  </a>
@@ -182,10 +187,24 @@ export default function ClientProfile({ params }: { params: Promise<{ slug: stri
   );
 }
 
-function SmartIcon({ url }: { url: string }) {
+function SmartIcon({ iconId, url }: { iconId?: string, url: string }) {
+  // 1. Prioridad: Icono elegido manualmente
+  if (iconId === 'instagram') return <Instagram className="w-4 h-4" />;
+  if (iconId === 'facebook') return <Facebook className="w-4 h-4" />;
+  if (iconId === 'linkedin') return <Linkedin className="w-4 h-4" />;
+  if (iconId === 'whatsapp') return <MessageCircle className="w-4 h-4" />;
+  if (iconId === 'web') return <Globe className="w-4 h-4" />;
+  if (iconId === 'map') return <MapPin className="w-4 h-4" />;
+  if (iconId === 'menu') return <FileText className="w-4 h-4" />;
+  if (iconId === 'offer') return <Tag className="w-4 h-4" />;
+  if (iconId === 'custom') return <ExternalLink className="w-4 h-4" />;
+
+  // 2. Fallback: Detección inteligente por URL
   const lower = (url || '').toLowerCase();
   if (lower.includes('wa.me') || lower.includes('whatsapp')) return <MessageCircle className="w-4 h-4" />;
-  if (lower.includes('instagr')) return <div className="w-4 h-4 border-2 border-current rounded-sm relative"><div className="absolute top-0.5 right-0.5 w-0.5 h-0.5 bg-current rounded-full" /></div>;
-  if (lower.includes('facebo')) return <span className="font-black text-lg leading-none">f</span>;
+  if (lower.includes('instagr')) return <Instagram className="w-4 h-4" />;
+  if (lower.includes('facebo')) return <Facebook className="w-4 h-4" />;
+  if (lower.includes('linkedi')) return <Linkedin className="w-4 h-4" />;
+  
   return <ExternalLink className="w-4 h-4" />;
 }

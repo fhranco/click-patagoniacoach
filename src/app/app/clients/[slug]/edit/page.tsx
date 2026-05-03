@@ -22,7 +22,9 @@ import {
   MousePointer2,
   Smartphone,
   MapPin,
-  ChevronRight
+  Phone,
+  Navigation,
+  Info
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,7 +46,7 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
     phone: '',
     whatsapp: '',
     address: '',
-    lead_capture_active: false,
+    lead_capture_active: true, // Por defecto activamos la barra de contacto
     lead_capture_text: '',
     lead_capture_type: 'whatsapp'
   });
@@ -91,7 +93,7 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
         .eq('id', formData.id);
       
       if (error) throw error;
-      alert('Configuración guardada con éxito 🏔️✨');
+      alert('¡Configuración de contacto y marca guardada! 🏔️✨');
     } catch (err: any) {
       alert('Error: ' + err.message);
     } finally {
@@ -127,17 +129,17 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
   if (loading) return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-4 border-patagonia-gold border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12 pb-32 animate-in fade-in duration-1000">
+    <div className="max-w-6xl mx-auto space-y-12 pb-32 animate-in fade-in duration-1000">
       
       {/* Header Premium */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-100 pb-10">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-gray-100 pb-10">
         <div className="flex items-center gap-6">
           <Link href={`/app/clients/${slug}`} className="p-3 hover:bg-gray-100 rounded-2xl transition-all border border-gray-50 bg-white shadow-sm">
             <ArrowLeft className="w-5 h-5 text-gray-500" />
           </Link>
           <div>
-            <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Studio de Marca</h1>
-            <p className="text-gray-400 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">Configuración de Alta Autoridad</p>
+            <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Configuración Elite</h1>
+            <p className="text-gray-400 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">Control Maestro de Marca y Conversión</p>
           </div>
         </div>
         
@@ -146,13 +148,13 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
             onClick={() => setActiveTab('brand')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'brand' ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
           >
-            <Palette className="w-4 h-4" /> Marca
+            <Palette className="w-4 h-4" /> Marca y Contacto
           </button>
           <button 
             onClick={() => setActiveTab('links')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'links' ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
           >
-            <Link2 className="w-4 h-4" /> Enlaces
+            <Link2 className="w-4 h-4" /> Lista de Enlaces
           </button>
         </div>
       </div>
@@ -167,8 +169,9 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
             onSubmit={handleClientSave} 
             className="space-y-10"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* CARD: IDENTIDAD */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              
+              {/* CARD: ADN DE MARCA */}
               <div className="card-premium p-10 space-y-8 bg-white border-gray-100 shadow-2xl shadow-black/[0.02]">
                  <div className="flex items-center gap-3 border-b border-gray-50 pb-6">
                    <div className="p-3 bg-black rounded-xl"><Type className="w-5 h-5 text-patagonia-gold" /></div>
@@ -182,14 +185,79 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
                  </div>
               </div>
 
-              {/* CARD: ESTILO */}
-              <div className="card-premium p-10 space-y-8 bg-white border-gray-100 shadow-2xl shadow-black/[0.02]">
-                 <div className="flex items-center gap-3 border-b border-gray-50 pb-6">
-                   <div className="p-3 bg-black rounded-xl"><Palette className="w-5 h-5 text-patagonia-gold" /></div>
-                   <h3 className="font-black italic uppercase text-xs tracking-[0.2em]">Personalización</h3>
+              {/* CARD: CANALES DE CONTACTO (LA PETICIÓN DE FRANCO) */}
+              <div className="card-premium p-10 space-y-8 bg-black text-white shadow-2xl shadow-black/20 relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-4 opacity-20"><Zap className="w-20 h-20 text-patagonia-gold" /></div>
+                 
+                 <div className="flex items-center justify-between border-b border-white/10 pb-6">
+                   <div className="flex items-center gap-3">
+                     <div className="p-3 bg-patagonia-gold rounded-xl"><Phone className="w-5 h-5 text-black" /></div>
+                     <h3 className="font-black italic uppercase text-xs tracking-[0.2em]">Canales de Contacto</h3>
+                   </div>
+                   
+                   {/* Switch para activar/desactivar la barra flotante */}
+                   <button 
+                    type="button"
+                    onClick={() => setFormData({...formData, lead_capture_active: !formData.lead_capture_active})}
+                    className={`px-4 py-2 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${formData.lead_capture_active ? 'bg-green-500 text-white' : 'bg-white/10 text-gray-400'}`}
+                   >
+                     {formData.lead_capture_active ? 'Barra Activa' : 'Barra Oculta'}
+                   </button>
                  </div>
                  
-                 <div className="space-y-8">
+                 <div className="space-y-6 relative z-10">
+                    <div className="space-y-2">
+                       <label className="text-[9px] font-black uppercase text-gray-500 tracking-widest flex items-center gap-2">
+                         <MessageCircle className="w-3 h-3 text-patagonia-gold" /> WhatsApp (Solo números)
+                       </label>
+                       <input 
+                        type="text" 
+                        value={formData.whatsapp} 
+                        onChange={e => setFormData({...formData, whatsapp: e.target.value})}
+                        placeholder="Ej: 56912345678"
+                        className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-patagonia-gold/40 text-white"
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[9px] font-black uppercase text-gray-500 tracking-widest flex items-center gap-2">
+                         <Phone className="w-3 h-3 text-patagonia-gold" /> Teléfono de Llamada
+                       </label>
+                       <input 
+                        type="text" 
+                        value={formData.phone} 
+                        onChange={e => setFormData({...formData, phone: e.target.value})}
+                        placeholder="Ej: +5622345678"
+                        className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-patagonia-gold/40 text-white"
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[9px] font-black uppercase text-gray-500 tracking-widest flex items-center gap-2">
+                         <Navigation className="w-3 h-3 text-patagonia-gold" /> Dirección (Google Maps)
+                       </label>
+                       <input 
+                        type="text" 
+                        value={formData.address} 
+                        onChange={e => setFormData({...formData, address: e.target.value})}
+                        placeholder="Ej: Av. Principal 123, Punta Arenas"
+                        className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-patagonia-gold/40 text-white"
+                       />
+                    </div>
+                 </div>
+                 
+                 <div className="pt-4 flex items-start gap-2 text-gray-500">
+                    <Info className="w-3 h-3 shrink-0 mt-0.5" />
+                    <p className="text-[8px] font-bold uppercase leading-tight">Estos datos activan los botones flotantes de "Llama", "WhatsApp" y "Dirección" en la parte inferior del micrositio móvil.</p>
+                 </div>
+              </div>
+
+              {/* CARD: PERSONALIZACIÓN VISUAL */}
+              <div className="lg:col-span-2 card-premium p-10 space-y-8 bg-white border-gray-100 shadow-2xl shadow-black/[0.02]">
+                 <div className="flex items-center gap-3 border-b border-gray-50 pb-6">
+                   <div className="p-3 bg-black rounded-xl"><Palette className="w-5 h-5 text-patagonia-gold" /></div>
+                   <h3 className="font-black italic uppercase text-xs tracking-[0.2em]">Personalización de Interfaz</h3>
+                 </div>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div className="space-y-3">
                       <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Color de Marca</label>
                       <div className="flex gap-4">
@@ -225,9 +293,9 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
             </div>
 
             <div className="flex justify-end pt-4">
-              <button disabled={saving} className="btn-primary px-12 py-5 flex items-center gap-3 shadow-2xl shadow-black/20 hover:scale-105 transition-all">
+              <button disabled={saving} className="btn-primary px-16 py-6 flex items-center gap-3 shadow-2xl shadow-black/20 hover:scale-105 transition-all">
                 <Save className="w-6 h-6" /> 
-                <span className="font-black uppercase italic tracking-widest text-xs">{saving ? 'Guardando...' : 'Guardar Cambios'}</span>
+                <span className="font-black uppercase italic tracking-widest text-sm">{saving ? 'Guardando...' : 'Aplicar Configuración'}</span>
               </button>
             </div>
           </motion.form>

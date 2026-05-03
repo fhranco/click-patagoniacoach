@@ -8,6 +8,11 @@ CREATE TABLE clients (
     brand_color TEXT DEFAULT '#000000',
     background_color TEXT DEFAULT '#ffffff',
     text_color TEXT DEFAULT '#000000',
+    theme TEXT DEFAULT 'neutral',
+    address TEXT,
+    phone TEXT,
+    whatsapp TEXT,
+    lead_capture_active BOOLEAN DEFAULT true,
     active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
@@ -21,6 +26,7 @@ CREATE TABLE links (
     icon TEXT,
     position INTEGER DEFAULT 0,
     active BOOLEAN DEFAULT true,
+    clicks INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
@@ -29,6 +35,7 @@ CREATE TABLE page_views (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    ip_address TEXT,
     referrer TEXT,
     user_agent TEXT,
     utm_source TEXT,
@@ -42,11 +49,22 @@ CREATE TABLE clicks (
     client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
     link_id UUID NOT NULL REFERENCES links(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    ip_address TEXT,
     referrer TEXT,
     user_agent TEXT,
     utm_source TEXT,
     utm_medium TEXT,
     utm_campaign TEXT
+);
+
+-- TABLA: leads
+CREATE TABLE leads (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+    name TEXT,
+    email TEXT,
+    phone TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 -- Índices para optimizar consultas de analytics
@@ -60,8 +78,10 @@ ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE page_views ENABLE ROW LEVEL SECURITY;
 ALTER TABLE clicks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Lectura pública de clientes activos" ON clients FOR SELECT USING (active = true);
 CREATE POLICY "Lectura pública de links activos" ON links FOR SELECT USING (active = true);
 CREATE POLICY "Insertar visitas públicamente" ON page_views FOR INSERT WITH CHECK (true);
 CREATE POLICY "Insertar clics públicamente" ON clicks FOR INSERT WITH CHECK (true);
+CREATE POLICY "Insertar leads públicamente" ON leads FOR INSERT WITH CHECK (true);

@@ -82,18 +82,24 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
   const handleGlobalSave = async () => {
     setSaving(true);
     try {
-      await supabase.from('clients').update(formData).eq('id', formData.id);
+      // 1. Guardar datos de marca
+      const { error: clientError } = await supabase.from('clients').update(formData).eq('id', formData.id);
+      if (clientError) throw clientError;
+
+      // 2. Guardar todos los enlaces
       for (const link of links) {
-        await supabase.from('links').update({
+        const { error: linkError } = await supabase.from('links').update({
           title: link.title,
           url: link.url,
           active: link.active,
           position: link.position
         }).eq('id', link.id);
+        if (linkError) throw linkError;
       }
-      alert('¡Configuración Elite Sincronizada! 🏔️✨');
+      
+      alert('¡Configuración Elite Aplicada! 🏔️✨ Todo está guardado.');
     } catch (err: any) {
-      alert('Error de guardado: ' + err.message);
+      alert('Error al guardar: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -122,22 +128,12 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
 
   const deleteLink = async (id: string) => {
     if (!confirm('¿Deseas eliminar este enlace permanentemente?')) return;
-    
     try {
-      // 1. Intentar borrar en la nube primero
-      const { error } = await supabase
-        .from('links')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('links').delete().eq('id', id);
       if (error) throw error;
-
-      // 2. Si tiene éxito, borrar localmente para refrescar la UI
       setLinks(prev => prev.filter(l => l.id !== id));
-      
     } catch (err: any) {
-      console.error("Delete error:", err);
-      alert("No se pudo eliminar el enlace: " + err.message);
+      alert("No se pudo eliminar: " + err.message);
     }
   };
 
@@ -262,21 +258,6 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
                   </div>
                </div>
             </div>
-
-            <div className="flex justify-end pt-4">
-               <button 
-                onClick={handleGlobalSave} 
-                disabled={saving}
-                className="bg-[#0A0A0A] text-white px-16 py-8 rounded-[2rem] shadow-[0_30px_70px_rgba(0,0,0,0.2)] flex items-center gap-6 hover:scale-105 active:scale-95 transition-all group"
-               >
-                  <div className={`p-2.5 bg-white/10 rounded-xl ${saving ? 'animate-spin' : 'group-hover:rotate-12 transition-all'}`}>
-                    {saving ? <RefreshCw className="w-6 h-6 text-patagonia-gold" /> : <Save className="w-6 h-6 text-white" />}
-                  </div>
-                  <span className="font-black uppercase italic tracking-[0.2em] text-xs">
-                    {saving ? 'Procesando...' : 'Aplicar Configuración'}
-                  </span>
-               </button>
-            </div>
           </motion.div>
         ) : (
           <motion.div key="links" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
@@ -307,13 +288,7 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
                     <button onClick={() => updateLocalLink(link.id, { active: !link.active })} className={`flex-1 md:flex-none px-6 py-5 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${link.active ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-gray-50 text-gray-400 border-transparent'}`}>
                       {link.active ? 'Visible' : 'Oculto'}
                     </button>
-                    {/* BOTÓN ELIMINAR BLINDADO */}
-                    <button 
-                      onClick={() => deleteLink(link.id)} 
-                      className="p-5 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-red-100"
-                    >
-                      <Trash2 className="w-6 h-6" />
-                    </button>
+                    <button onClick={() => deleteLink(link.id)} className="p-5 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-red-100"><Trash2 className="w-6 h-6" /></button>
                   </div>
                 </div>
               ))}
@@ -321,6 +296,23 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* BOTÓN MAESTRO DE GUARDADO (SIEMPRE VISIBLE ABAJO) */}
+      <div className="flex justify-end pt-8">
+          <button 
+          onClick={handleGlobalSave} 
+          disabled={saving}
+          className="bg-[#0A0A0A] text-white px-16 py-8 rounded-[2.5rem] shadow-[0_40px_80px_rgba(0,0,0,0.3)] flex items-center gap-6 hover:scale-105 active:scale-95 transition-all group border border-white/5"
+          >
+            <div className={`p-2.5 bg-white/10 rounded-xl ${saving ? 'animate-spin' : 'group-hover:rotate-12 transition-all'}`}>
+              {saving ? <RefreshCw className="w-6 h-6 text-patagonia-gold" /> : <Save className="w-6 h-6 text-white" />}
+            </div>
+            <div className="text-left">
+              <span className="block font-black uppercase italic tracking-[0.2em] text-xs leading-none">Aplicar Configuración</span>
+              <span className="block text-[7px] font-bold uppercase tracking-[0.3em] text-white/30 mt-1">Sincronizar con Producción</span>
+            </div>
+          </button>
+      </div>
 
       <div className="fixed bottom-10 left-10 z-50">
           <a 

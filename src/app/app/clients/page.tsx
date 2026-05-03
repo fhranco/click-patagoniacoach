@@ -2,142 +2,146 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Client } from '@/types';
 import { 
-  Search, 
+  Users, 
   Plus, 
-  MoreVertical, 
+  Search, 
   ExternalLink, 
-  CheckCircle2, 
+  BarChart3, 
+  Settings, 
+  MoreVertical,
+  CheckCircle2,
   XCircle,
-  Settings2,
-  ChevronRight,
-  Users,
   Eye
 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function ClientsList() {
-  const [clients, setClients] = useState<Client[]>([]);
+export default function ClientsPage() {
+  const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchClients();
   }, []);
 
   const fetchClients = async () => {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select(`
+          *,
+          links (count),
+          page_views (count)
+        `)
+        .order('created_at', { ascending: false });
 
-    if (!error) setClients(data || []);
-    setLoading(false);
+      if (error) throw error;
+      setClients(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredClients = clients.filter(c => 
-    c.name.toLowerCase().includes(search.toLowerCase()) || 
-    c.slug.toLowerCase().includes(search.toLowerCase())
+    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.slug.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="space-y-12">
-      {/* Header */}
+    <div className="space-y-8 animate-in fade-in duration-700 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black italic tracking-tighter uppercase">Clientes.</h1>
-          <p className="text-gray-400 font-light">Gestiona las páginas públicas de tus marcas locales.</p>
+          <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Gestión de Clientes</h1>
+          <p className="text-gray-400 font-medium text-sm mt-1">Administra marcas, enlaces y accesos privados.</p>
         </div>
-        <div className="flex items-center gap-4">
-           <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-patagonia-gold transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Buscar cliente..." 
-                className="bg-white border border-gray-100 rounded-2xl pl-12 pr-6 py-4 outline-none text-sm w-full md:w-64 focus:ring-4 focus:ring-patagonia-gold/10 focus:border-patagonia-gold transition-all"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-           </div>
-           <Link href="/app/clients/new" className="btn-primary">
-             <Plus className="w-5 h-5" />
-             <span className="hidden md:inline">Añadir</span>
-           </Link>
-        </div>
+        <Link href="/app/clients/new" className="btn-primary flex items-center gap-2 py-4 px-8">
+          <Plus className="w-5 h-5" /> Nuevo Cliente
+        </Link>
       </div>
 
-      {/* Clients Table / Grid */}
+      <div className="relative group">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-patagonia-gold transition-colors" />
+        <input 
+          type="text" 
+          placeholder="Buscar por nombre o slug..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-12 pr-6 py-5 bg-white border-none rounded-[2rem] shadow-xl shadow-black/5 outline-none font-bold text-sm focus:ring-2 focus:ring-patagonia-gold/20 transition-all"
+        />
+      </div>
+
       <div className="grid grid-cols-1 gap-4">
         {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-24 w-full bg-white animate-pulse rounded-3xl" />
-          ))
-        ) : filteredClients.length > 0 ? (
-          filteredClients.map((client) => (
-            <div 
-              key={client.id}
-              className="card-premium group p-6 flex flex-col md:flex-row items-center justify-between gap-6 hover:translate-x-2 transition-transform cursor-pointer"
-            >
-              <Link href={`/app/clients/${client.slug}`} className="flex flex-1 items-center gap-6 w-full">
-                <div 
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner"
-                  style={{ backgroundColor: client.brand_color, color: '#fff' }}
-                >
+          <div className="flex items-center justify-center h-40">
+             <div className="w-8 h-8 border-4 border-patagonia-gold border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filteredClients.map((client) => (
+          <div key={client.id} className="card-premium p-6 flex flex-col md:flex-row items-center justify-between gap-6 group hover:border-patagonia-gold/30 transition-all">
+            <div className="flex items-center gap-6 w-full md:w-auto">
+               <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 shadow-sm flex-shrink-0">
                   {client.logo_url ? (
-                    <img src={client.logo_url} className="w-full h-full object-cover rounded-2xl" alt="" />
-                  ) : client.name[0]}
-                </div>
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-bold tracking-tight">{client.name}</h3>
+                    <img src={client.logo_url} alt={client.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-black text-patagonia-gold font-black text-xl italic">
+                      {client.name[0]}
+                    </div>
+                  )}
+               </div>
+               <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-black italic uppercase tracking-tighter leading-none truncate">{client.name}</h3>
                     {client.active ? (
-                      <span className="bg-green-100 text-green-600 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
-                        <CheckCircle2 className="w-2.5 h-2.5" /> Activo
-                      </span>
+                      <CheckCircle2 className="w-3 h-3 text-green-500" />
                     ) : (
-                      <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
-                        <XCircle className="w-2.5 h-2.5" /> Inactivo
-                      </span>
+                      <XCircle className="w-3 h-3 text-red-500" />
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-gray-400">
-                    <p className="font-mono">/{client.slug}</p>
-                    <span className="w-1 h-1 bg-gray-200 rounded-full" />
-                    <p>{new Date(client.created_at).toLocaleDateString()}</p>
-                  </div>
-                </div>
-              </Link>
-
-              <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-                <Link 
-                  href={`/${client.slug}`} 
-                  target="_blank"
-                  title="Ver Página Pública"
-                  className="p-3 rounded-xl bg-gray-50 text-gray-400 hover:text-patagonia-gold hover:bg-patagonia-gold/10 transition-all flex items-center gap-2 group/btn"
-                >
-                  <Eye className="w-5 h-5" />
-                  <span className="text-[8px] font-black uppercase tracking-widest hidden group-hover/btn:block">Vista Previa</span>
-                </Link>
-                <Link 
-                  href={`/app/clients/${client.slug}`}
-                  className="p-3 rounded-xl bg-gray-50 text-gray-400 hover:text-black hover:bg-gray-100 transition-all"
-                >
-                  <Settings2 className="w-5 h-5" />
-                </Link>
-                <Link 
-                  href={`/app/clients/${client.slug}`}
-                  className="ml-4 p-4 rounded-2xl bg-black text-white group-hover:bg-patagonia-gold group-hover:text-black transition-all shadow-lg shadow-black/5"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </Link>
-              </div>
+                  <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-widest">/{client.slug}</p>
+               </div>
             </div>
-          ))
-        ) : (
-          <div className="text-center py-32 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
-            <Users className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-            <p className="text-gray-400 font-light">No se encontraron clientes.</p>
+
+            <div className="flex items-center gap-8 w-full md:w-auto justify-around border-t md:border-t-0 pt-4 md:pt-0 border-gray-50">
+               <div className="text-center">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Visitas</p>
+                  <p className="text-xl font-black italic">{client.page_views[0].count}</p>
+               </div>
+               <div className="text-center">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Enlaces</p>
+                  <p className="text-xl font-black italic">{client.links[0].count}</p>
+               </div>
+            </div>
+
+            <div className="flex items-center gap-3 w-full md:w-auto">
+               <Link 
+                href={`/app/clients/${client.slug}`}
+                className="flex-1 md:flex-none p-4 bg-gray-50 text-black rounded-2xl hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2 font-black uppercase text-[10px] tracking-widest"
+               >
+                  <BarChart3 className="w-4 h-4" /> Reporte
+               </Link>
+               <Link 
+                href={`/app/clients/${client.slug}/edit`}
+                className="flex-1 md:flex-none p-4 bg-patagonia-gold/10 text-patagonia-gold rounded-2xl hover:bg-patagonia-gold hover:text-white transition-all flex items-center justify-center gap-2 font-black uppercase text-[10px] tracking-widest"
+               >
+                  <Settings className="w-4 h-4" /> Configurar
+               </Link>
+               <a 
+                href={`/${client.slug}`} 
+                target="_blank"
+                className="p-4 bg-gray-50 text-gray-400 rounded-2xl hover:bg-gray-100 hover:text-black transition-all"
+               >
+                  <Eye className="w-5 h-5" />
+               </a>
+            </div>
+          </div>
+        ))}
+
+        {filteredClients.length === 0 && !loading && (
+          <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
+             <Users className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+             <p className="text-gray-400 font-bold uppercase text-xs">No se encontraron clientes</p>
           </div>
         )}
       </div>

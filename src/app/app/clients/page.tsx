@@ -9,10 +9,11 @@ import {
   ExternalLink, 
   BarChart3, 
   Settings, 
-  MoreVertical,
   CheckCircle2,
   XCircle,
-  Eye
+  Eye,
+  Copy,
+  Check
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -20,6 +21,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchClients();
@@ -43,6 +45,13 @@ export default function ClientsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyToClipboard = (slug: string, id: string) => {
+    const url = `${window.location.origin}/${slug}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const filteredClients = clients.filter(c => 
@@ -99,18 +108,27 @@ export default function ClientsPage() {
                       <XCircle className="w-3 h-3 text-red-500" />
                     )}
                   </div>
-                  <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-widest">/{client.slug}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">/{client.slug}</p>
+                    <button 
+                      onClick={() => copyToClipboard(client.slug, client.id)}
+                      className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg transition-all text-[8px] font-black uppercase tracking-tighter ${copiedId === client.id ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400 hover:bg-black hover:text-white'}`}
+                    >
+                      {copiedId === client.id ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
+                      {copiedId === client.id ? 'Copiado' : 'Copiar Enlace'}
+                    </button>
+                  </div>
                </div>
             </div>
 
             <div className="flex items-center gap-8 w-full md:w-auto justify-around border-t md:border-t-0 pt-4 md:pt-0 border-gray-50">
                <div className="text-center">
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Visitas</p>
-                  <p className="text-xl font-black italic">{client.page_views[0].count}</p>
+                  <p className="text-xl font-black italic">{client.page_views?.[0]?.count || 0}</p>
                </div>
                <div className="text-center">
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Enlaces</p>
-                  <p className="text-xl font-black italic">{client.links[0].count}</p>
+                  <p className="text-xl font-black italic">{client.links?.[0]?.count || 0}</p>
                </div>
             </div>
 

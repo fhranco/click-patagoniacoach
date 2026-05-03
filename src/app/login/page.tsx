@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Zap, Lock, Mail, ChevronRight, AlertCircle } from 'lucide-react';
@@ -12,27 +12,53 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  // Verificar si ya está logueado al entrar
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        console.log('Sesión activa detectada, redirigiendo...');
+        router.push('/app');
+      }
+    });
+  }, [router]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Iniciando intento de login para:', email);
     setLoading(true);
     setError(null);
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (authError) {
-      setError(authError.message);
+      if (authError) {
+        console.error('Error de autenticación:', authError.message);
+        setError(authError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data?.user) {
+        console.log('Login exitoso, usuario:', data.user.email);
+        console.log('Redirigiendo a /app...');
+        
+        // Pequeño delay para asegurar que la sesión se guarde en cookies
+        setTimeout(() => {
+           window.location.href = '/app'; // Usamos window.location para forzar el refresco del Middleware
+        }, 500);
+      }
+    } catch (err: any) {
+      console.error('Error inesperado:', err);
+      setError('Error de conexión con el servidor de seguridad.');
       setLoading(false);
-    } else {
-      router.push('/app');
     }
   };
 
   return (
     <div className="h-screen w-full flex items-center justify-center bg-[#FAFAFA] p-6 relative overflow-hidden">
-      {/* Elementos Decorativos de Fondo */}
       <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-patagonia-gold/5 rounded-full blur-[120px]" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-black/5 rounded-full blur-[120px]" />
 
@@ -75,9 +101,9 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 p-4 bg-red-50 rounded-xl text-red-500 text-[10px] font-bold uppercase tracking-tight animate-in slide-in-from-top-2">
-                <AlertCircle className="w-4 h-4" />
-                {error}
+              <div className="flex items-center gap-2 p-4 bg-red-50 rounded-xl text-red-500 text-[10px] font-bold uppercase tracking-tight animate-in slide-in-from-top-2 text-center w-full">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span className="w-full">{error}</span>
               </div>
             )}
 
@@ -85,7 +111,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full py-4 bg-black text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-black/10 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
             >
-              {loading ? 'Validando...' : (
+              {loading ? 'Validando Credenciales...' : (
                 <>Entrar al Sistema <ChevronRight className="w-4 h-4" /></>
               )}
             </button>

@@ -5,9 +5,15 @@ export type Client = {
   description: string | null;
   logo_url: string | null;
   brand_color: string;
+  brand_color_secondary: string | null; // Nuevo: Para gradientes
   background_color: string;
+  background_pattern: 'none' | 'dots' | 'grid' | 'lines';
+  logo_shape: 'circle' | 'squircle' | 'square'; // Nuevo
+  logo_scale: number; // Nuevo
+  logo_border_enabled: boolean; // Nuevo
   text_color: string;
   active: boolean;
+  authority_mode: 'light' | 'dark';
   created_at: string;
 };
 
@@ -19,6 +25,11 @@ export type Link = {
   icon: string | null;
   position: number;
   active: boolean;
+  schedule_active: boolean; // Nuevo
+  schedule_start: string | null; // Nuevo (HH:mm)
+  schedule_end: string | null; // Nuevo (HH:mm)
+  is_ab_test: boolean; // Nuevo
+  title_variant: string | null; // Nuevo
   created_at: string;
 };
 

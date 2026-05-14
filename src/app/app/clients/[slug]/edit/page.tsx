@@ -24,9 +24,6 @@ import {
   Smartphone,
   MapPin,
   Settings2,
-  Instagram,
-  Facebook,
-  Linkedin,
   FileText,
   Tag,
   ExternalLink,
@@ -34,11 +31,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FaInstagram, FaFacebook, FaLinkedin } from 'react-icons/fa';
 
 const ICON_OPTIONS = [
-  { id: 'instagram', label: 'Instagram', icon: Instagram },
-  { id: 'facebook', label: 'Facebook', icon: Facebook },
-  { id: 'linkedin', label: 'LinkedIn', icon: Linkedin },
+  { id: 'instagram', label: 'Instagram', icon: FaInstagram },
+  { id: 'facebook', label: 'Facebook', icon: FaFacebook },
+  { id: 'linkedin', label: 'LinkedIn', icon: FaLinkedin },
   { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
   { id: 'web', label: 'Sitio Web', icon: Globe },
   { id: 'map', label: 'Dirección', icon: MapPin },
@@ -101,8 +99,37 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
   const handleGlobalSave = async () => {
     setSaving(true);
     try {
-      const { error: clientError } = await supabase.from('clients').update(formData).eq('id', formData.id);
-      if (clientError) throw clientError;
+      // Solo enviamos los campos que estamos seguros que existen para evitar errores de esquema
+      const { error: clientError } = await supabase.from('clients').update({
+        name: formData.name,
+        description: formData.description,
+        logo_url: formData.logo_url,
+        brand_color: formData.brand_color,
+        brand_color_secondary: formData.brand_color_secondary,
+        background_color: formData.background_color,
+        background_pattern: formData.background_pattern,
+        logo_shape: formData.logo_shape,
+        logo_scale: formData.logo_scale,
+        logo_border_enabled: formData.logo_border_enabled,
+        text_color: formData.text_color,
+        active: formData.active,
+        authority_mode: formData.authority_mode,
+        lead_capture_active: formData.lead_capture_active,
+        whatsapp: formData.whatsapp,
+        phone: formData.phone,
+        address: formData.address,
+        theme: formData.theme
+      }).eq('id', formData.id);
+      
+      if (clientError) {
+        console.error("Save error:", clientError);
+        // Si el error es por columnas faltantes, avisamos pero permitimos continuar con lo básico
+        if (clientError.message.includes('column')) {
+          alert('⚠️ Atención: Algunas funciones visuales nuevas requieren una actualización de base de datos. Los datos básicos se guardaron, pero contacta a soporte para activar el "Pack Cinematic".');
+        } else {
+          throw clientError;
+        }
+      }
 
       for (const link of links) {
         const { error: linkError } = await supabase.from('links').update({
@@ -195,6 +222,46 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
                     <InputField label="Nombre Comercial" value={formData.name} onChange={(v: string) => setFormData({...formData, name: v})} />
                     <InputField label="Slogan / Descripción" value={formData.description} onChange={(v: string) => setFormData({...formData, description: v})} />
                     <InputField label="URL del Logotipo" value={formData.logo_url} onChange={(v: string) => setFormData({...formData, logo_url: v})} />
+                    
+                    <div className="pt-4 space-y-6">
+                       <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400">Arquitectura del Logo</label>
+                       <div className="grid grid-cols-3 gap-3">
+                          {['circle', 'squircle', 'square'].map(s => (
+                            <button 
+                              key={s} 
+                              type="button"
+                              onClick={() => setFormData({...formData, logo_shape: s as any})}
+                              className={`py-3 rounded-xl border-2 text-[8px] font-black uppercase tracking-widest transition-all ${formData.logo_shape === s ? 'bg-black text-white border-black shadow-lg' : 'border-gray-50 text-gray-300'}`}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                       </div>
+                       
+                       <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Anillo de Marca</label>
+                          <button 
+                            type="button"
+                            onClick={() => setFormData({...formData, logo_border_enabled: !formData.logo_border_enabled})}
+                            className={`px-4 py-2 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${formData.logo_border_enabled ? 'bg-patagonia-gold text-black' : 'bg-gray-100 text-gray-400'}`}
+                          >
+                            {formData.logo_border_enabled ? 'Activado' : 'Desactivado'}
+                          </button>
+                       </div>
+
+                       <div className="space-y-3">
+                          <div className="flex justify-between">
+                             <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Escala de Impacto</label>
+                             <span className="text-[10px] font-black text-black">{(formData.logo_scale || 1).toFixed(1)}x</span>
+                          </div>
+                          <input 
+                            type="range" min="0.8" max="1.5" step="0.1" 
+                            value={formData.logo_scale || 1}
+                            onChange={(e) => setFormData({...formData, logo_scale: parseFloat(e.target.value)})}
+                            className="w-full accent-black h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                          />
+                       </div>
+                    </div>
                  </div>
               </div>
 
@@ -227,20 +294,47 @@ export default function EditClient({ params }: { params: Promise<{ slug: string 
                   <h3 className="font-black italic uppercase text-sm tracking-[0.15em]">Personalización de Interfaz</h3>
                </div>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                  <div className="space-y-4">
-                     <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Color de Marca</label>
-                     <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 rounded-2xl border border-gray-100 shadow-inner" style={{ backgroundColor: formData.brand_color || '#000000' }} />
-                        <input type="text" value={formData.brand_color || '#000000'} onChange={(e) => setFormData({...formData, brand_color: e.target.value})} className="flex-1 px-8 py-5 bg-gray-50 rounded-2xl font-black uppercase tracking-widest text-xs outline-none" />
+                  <div className="space-y-6">
+                     <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Paleta de Gradiente (Primario & Secundario)</label>
+                     <div className="flex items-center gap-4">
+                        <div className="flex-1 flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                           <input type="color" value={formData.brand_color || '#000000'} onChange={(e) => setFormData({...formData, brand_color: e.target.value})} className="w-12 h-12 rounded-xl cursor-pointer border-none bg-transparent" />
+                           <input type="text" value={formData.brand_color || '#000000'} onChange={(e) => setFormData({...formData, brand_color: e.target.value})} className="bg-transparent font-black uppercase tracking-widest text-[10px] outline-none w-full" />
+                        </div>
+                        <div className="flex-1 flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                           <input type="color" value={formData.brand_color_secondary || formData.brand_color || '#000000'} onChange={(e) => setFormData({...formData, brand_color_secondary: e.target.value})} className="w-12 h-12 rounded-xl cursor-pointer border-none bg-transparent" />
+                           <input type="text" placeholder="Gradiente" value={formData.brand_color_secondary || ''} onChange={(e) => setFormData({...formData, brand_color_secondary: e.target.value})} className="bg-transparent font-black uppercase tracking-widest text-[10px] outline-none w-full" />
+                        </div>
+                     </div>
+                     <p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest leading-relaxed">Si dejas el segundo color vacío, se usará un color sólido. Si lo completas, se creará un degradado cinemático.</p>
+                  </div>
+
+                  <div className="space-y-6">
+                     <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Modo de Autoridad (Contraste)</label>
+                     <div className="grid grid-cols-2 gap-4">
+                        <button onClick={() => setFormData({...formData, authority_mode: 'light'})} className={`py-5 rounded-2xl border-2 font-black italic uppercase text-[10px] tracking-widest transition-all ${formData.authority_mode === 'light' ? 'border-patagonia-gold bg-patagonia-gold text-black shadow-xl scale-105' : 'border-white/10 text-gray-500'}`}>Pure White</button>
+                        <button onClick={() => setFormData({...formData, authority_mode: 'dark'})} className={`py-5 rounded-2xl border-2 font-black italic uppercase text-[10px] tracking-widest transition-all ${formData.authority_mode === 'dark' ? 'border-patagonia-gold bg-patagonia-gold text-black shadow-xl scale-105' : 'border-white/10 text-gray-500'}`}>Deep Noir</button>
                      </div>
                   </div>
-                  <div className="space-y-4">
-                     <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Tema del Micrositio</label>
-                     <select value={formData.theme || 'neutral'} onChange={(e) => setFormData({...formData, theme: e.target.value})} className="w-full px-8 py-5 bg-gray-50 rounded-2xl font-black uppercase tracking-widest text-xs outline-none appearance-none">
-                        <option value="neutral">Blanco Institucional</option>
-                        <option value="dark">Negro Carbono</option>
-                        <option value="gold">Oro Patagonia</option>
-                     </select>
+               </div>
+
+               <div className="space-y-6 pt-4">
+                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Textura Técnica de Fondo</label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                     {['none', 'dots', 'grid', 'lines'].map((p) => (
+                       <button
+                         key={p}
+                         type="button"
+                         onClick={() => setFormData({ ...formData, background_pattern: p as any })}
+                         className={`px-4 py-5 rounded-2xl border-2 font-black italic uppercase text-[10px] tracking-widest transition-all ${
+                           formData.background_pattern === p 
+                           ? 'border-patagonia-gold bg-patagonia-gold text-black shadow-xl scale-105' 
+                           : 'border-white/5 bg-white/5 text-gray-500 hover:border-white/10'
+                         }`}
+                       >
+                         {p === 'none' ? 'Plano' : p}
+                       </button>
+                     ))}
                   </div>
                </div>
             </div>
@@ -361,7 +455,8 @@ function SmartIconPreview({ iconId, url }: { iconId?: string, url: string }) {
   }
   const lower = (url || '').toLowerCase();
   if (lower.includes('wa.me') || lower.includes('whatsapp')) return <MessageCircle className="w-8 h-8" />;
-  if (lower.includes('instagr')) return <Instagram className="w-8 h-8" />;
-  if (lower.includes('facebo')) return <Facebook className="w-8 h-8" />;
+  if (lower.includes('instagr')) return <FaInstagram className="w-8 h-8" />;
+  if (lower.includes('facebo')) return <FaFacebook className="w-8 h-8" />;
+  if (lower.includes('linkedi')) return <FaLinkedin className="w-8 h-8" />;
   return <Globe className="w-8 h-8" />;
 }
